@@ -1,0 +1,15 @@
+{
+    "editor.autoClosingComments": "always",
+    "editor.autoClosingBrackets": "always",
+    "editor.autoClosingDelete": "always",
+    "editor.autoClosingOvertype": "always",
+    "terminal.integrated.enableBell": false,
+    "terminal.integrated.showExitAlert": false,
+    "terminal.integrated.enableVisualBell": false,
+    "accessibility.signals.terminalBell": {
+        "sound": "off"
+    },
+    "cursor.aipreview.enabled": true,
+    "cursor.cpp.enableAutoAccept": true,
+    "windsurf.cascade.autoApply": true
+}
