@@ -51,6 +51,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { DeleteConfirmDialog } from '@/components/ui/DeleteConfirmDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -97,6 +98,14 @@ const DEFAULT_RESOURCE_OPTIONS = [
   'KITCHEN', 'PREPARATION ZONE', 'POURING ISLAND',
   'LABELLING ZONE', 'ASSEMBLY ZONE', 'PACKAGING ZONE',
 ];
+
+interface ConfirmDialogState {
+  open: boolean;
+  title: string;
+  description: string;
+  onConfirm: () => void;
+  actionLabel?: string;
+}
 
 // Helper: Parse comma-separated operators string to array
 const parseOperators = (operatorString: string | null | undefined): string[] => {
@@ -320,14 +329,14 @@ const OperationStatusDropdown = ({
         <>
           <div className="fixed inset-0 z-[9998]" onClick={() => setIsOpen(false)} />
           <div
-            className="fixed bg-[#1e1e1e] border border-gray-700 rounded-md shadow-2xl z-[9999] w-[180px] flex flex-col py-1"
+            className="fixed bg-[#1e1e1e] border border-[#3a3a38] rounded-md shadow-2xl z-[9999] w-[180px] flex flex-col py-1"
             style={dropdownStyle}
           >
             {/* Header */}
             <div className="px-3 py-1.5 text-gray-400 text-[11px] uppercase tracking-wider font-medium">
               Status
             </div>
-            <div className="h-px bg-gray-700 mx-1 mb-1"></div>
+            <div className="h-px bg-[#3a3a38] mx-1 mb-1"></div>
             {/* Options List */}
             <div className="py-1">
               {OPERATION_STATUS_OPTIONS.map(option => (
@@ -785,6 +794,12 @@ const OperatorMultiSelect = ({
 
 export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDetailProps) {
   const [order, setOrder] = useState<ManufacturingOrderDetails>(initialOrder);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+    open: false,
+    title: '',
+    description: '',
+    onConfirm: () => { }
+  });
   const [ingredients, setIngredients] = useState<any[]>([]);
   const [operations, setOperations] = useState<any[]>([]);
   const [availableVariants, setAvailableVariants] = useState<any[]>([]);
@@ -3287,10 +3302,16 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                       // Load BOM only (for ingredients section)
                       const bom = await loadBOMForProduct(order.variant_id!);
                       if (bom.length > 0) {
-                        const shouldReplace = ingredients.length === 0 ||
-                          window.confirm(`Replace ${ingredients.length} existing ingredients with product BOM?`);
-                        if (shouldReplace) {
+                        if (ingredients.length === 0) {
                           await populateIngredientsFromBOM(bom);
+                        } else {
+                          setConfirmDialog({
+                            open: true,
+                            title: 'Replace ingredients?',
+                            description: `Are you sure you want to replace ${ingredients.length} existing ingredients with the product BOM?`,
+                            onConfirm: () => populateIngredientsFromBOM(bom),
+                            actionLabel: 'Replace'
+                          });
                         }
                       } else {
                         showToast('No BOM found for this product', 'warning');
@@ -3574,10 +3595,16 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                       // Load operations only (for operations section)
                       const productOps = await loadProductOperationsTemplate(order.variant_id!);
                       if (productOps.length > 0) {
-                        const shouldReplace = operations.length === 0 ||
-                          window.confirm(`Replace ${operations.length} existing operations with product operations?`);
-                        if (shouldReplace) {
+                        if (operations.length === 0) {
                           await populateOperationsFromProduct(productOps);
+                        } else {
+                          setConfirmDialog({
+                            open: true,
+                            title: 'Replace operations?',
+                            description: `Are you sure you want to replace ${operations.length} existing operations with the product operations template?`,
+                            onConfirm: () => populateOperationsFromProduct(productOps),
+                            actionLabel: 'Replace'
+                          });
                         }
                       } else {
                         showToast('No operations found for this product', 'warning');
@@ -4430,21 +4457,21 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
 
       {/* Buy Modal - Create Purchase Order */}
       {showBuyModal && buyIngredient && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000]">
-          <div className="bg-white rounded-lg p-6 w-[520px] text-gray-900 shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[10000]">
+          <div className="bg-[#1a1a18] border border-[#3a3a38] rounded-lg p-6 w-[520px] text-[#faf9f5] shadow-2xl">
             <h2 className="text-xl font-semibold mb-6">New purchase order</h2>
 
             {/* Product & Calculated Stock Row */}
             <div className="flex justify-between mb-5">
               <div>
-                <div className="text-xs text-gray-500 mb-1">Product</div>
-                <div className="font-medium text-gray-900">
+                <div className="text-xs text-muted-foreground mb-1">Product</div>
+                <div className="font-medium text-[#faf9f5]">
                   {buyIngredient.variant?.item?.name || 'Unknown Item'}
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-xs text-gray-500 mb-1">Calculated stock</div>
-                <div className="text-gray-900">
+                <div className="text-xs text-muted-foreground mb-1">Calculated stock</div>
+                <div className="text-[#faf9f5]">
                   {(ingredientStockLevels[buyIngredient.variant_id]?.inStock || 0).toFixed(3)} {buyIngredient.variant?.item?.uom || 'pcs'}
                 </div>
               </div>
@@ -4453,7 +4480,7 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
             {/* Quantity Row */}
             <div className="flex items-center gap-4 mb-5">
               <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-1">Quantity</div>
+                <div className="text-xs text-muted-foreground mb-1">Quantity</div>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -4467,27 +4494,27 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                       }));
                     }}
                     onFocus={(e) => e.target.select()}
-                    className="border border-[#3a3a38] rounded px-3 py-2 w-28 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-[#3a3a38]"
+                    className="bg-[#1e1e1e] border border-[#3a3a38] rounded px-3 py-2 w-28 text-[#faf9f5] focus:outline-none focus:ring-1 focus:ring-[#3a3a38] focus:border-[#d97757]"
                   />
-                  <span className="text-gray-600">{buyIngredient.variant?.item?.uom || 'pcs'}</span>
+                  <span className="text-muted-foreground">{buyIngredient.variant?.item?.uom || 'pcs'}</span>
                 </div>
               </div>
-              <span className="text-gray-400 text-lg mt-5">=</span>
+              <span className="text-muted-foreground/30 text-lg mt-5">=</span>
               <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-1">Purchase unit quantity</div>
+                <div className="text-xs text-muted-foreground mb-1">Purchase unit quantity</div>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-900 font-medium">
+                  <span className="text-[#faf9f5] font-medium">
                     {buyModalData.purchaseUnitQty.toFixed(5)}
                   </span>
-                  <span className="text-gray-600">{buyModalData.purchaseUom}</span>
+                  <span className="text-muted-foreground">{buyModalData.purchaseUom}</span>
                 </div>
               </div>
             </div>
 
             {/* Supplier */}
             <div className="mb-5">
-              <div className="text-xs text-gray-500 mb-1">Supplier</div>
-              <div className="font-medium text-gray-900 py-2 border-b border-gray-200">
+              <div className="text-xs text-muted-foreground mb-1">Supplier</div>
+              <div className="font-medium text-[#faf9f5] py-2 border-b border-[#3a3a38]">
                 {buyModalData.supplierName}
               </div>
             </div>
@@ -4498,9 +4525,9 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                 type="checkbox"
                 checked={buyModalData.addMissingItems}
                 onChange={(e) => setBuyModalData(prev => ({ ...prev, addMissingItems: e.target.checked }))}
-                className="w-4 h-4 rounded border-[#3a3a38] text-blue-600 focus:ring-blue-500"
+                className="w-4 h-4 rounded border-[#3a3a38] bg-[#1e1e1e] text-[#d97757] focus:ring-[#d97757]"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-muted-foreground">
                 Add other missing items from the same supplier to the purchase order.
               </span>
             </label>
@@ -4508,29 +4535,29 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
             {/* PO # and Expected Arrival */}
             <div className="flex gap-6 mb-5">
               <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-1">Purchase order #</div>
+                <div className="text-xs text-muted-foreground mb-1">Purchase order #</div>
                 <input
                   type="text"
                   value={buyModalData.poNumber}
                   onChange={(e) => setBuyModalData(prev => ({ ...prev, poNumber: e.target.value }))}
-                  className="border border-[#3a3a38] rounded px-3 py-2 w-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-[#3a3a38]"
+                  className="bg-[#1e1e1e] border border-[#3a3a38] rounded px-3 py-2 w-full text-[#faf9f5] focus:outline-none focus:ring-1 focus:ring-[#3a3a38] focus:border-[#d97757]"
                 />
               </div>
               <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-1">Expected arrival</div>
+                <div className="text-xs text-muted-foreground mb-1">Expected arrival</div>
                 <input
                   type="date"
                   value={buyModalData.expectedArrival}
                   onChange={(e) => setBuyModalData(prev => ({ ...prev, expectedArrival: e.target.value }))}
-                  className="border border-[#3a3a38] rounded px-3 py-2 w-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-[#3a3a38]"
+                  className="bg-[#1e1e1e] border border-[#3a3a38] rounded px-3 py-2 w-full text-[#faf9f5] focus:outline-none focus:ring-1 focus:ring-[#3a3a38] focus:border-[#d97757] [color-scheme:dark]"
                 />
               </div>
             </div>
 
             {/* Ship to */}
             <div className="mb-8">
-              <div className="text-xs text-gray-500 mb-1">Ship to</div>
-              <div className="font-medium text-gray-900 py-2 border-b border-gray-200">
+              <div className="text-xs text-muted-foreground mb-1">Ship to</div>
+              <div className="font-medium text-[#faf9f5] py-2 border-b border-[#3a3a38]">
                 {buyModalData.locationName}
               </div>
             </div>
@@ -4542,19 +4569,19 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                   setShowBuyModal(false);
                   setBuyIngredient(null);
                 }}
-                className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded font-medium transition"
+                className="px-4 py-2 text-muted-foreground hover:text-[#faf9f5] hover:bg-secondary/20 rounded font-medium transition"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleCreatePO('open')}
-                className="px-4 py-2 bg-blue-900 text-white rounded font-medium hover:bg-blue-800 transition"
+                className="px-4 py-2 border border-[#3a3a38] text-[#faf9f5] rounded font-medium hover:bg-secondary/20 transition"
               >
                 Create and open order
               </button>
               <button
                 onClick={() => handleCreatePO('close')}
-                className="px-4 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 transition"
+                className="px-4 py-2 bg-[#d97757] text-white rounded font-medium hover:bg-[#c66a4d] transition"
               >
                 Create and close
               </button>
@@ -4566,15 +4593,15 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
       {/* Batch Tracking Modal */}
       {batchModalOpen && selectedIngredientForBatch && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-[800px] max-h-[80vh] overflow-hidden shadow-xl">
+          <div className="bg-[#1a1a18] border border-[#3a3a38] text-[#faf9f5] rounded-lg w-[800px] max-h-[80vh] overflow-hidden shadow-xl">
 
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-start">
+            <div className="px-6 py-4 border-b border-[#3a3a38] flex justify-between items-start">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-[#faf9f5]">
                   Batch tracking info
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Assign batch numbers to the used ingredients
                 </p>
               </div>
@@ -4588,7 +4615,7 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                 const isComplete = totalAssigned >= required;
 
                 return (
-                  <span className={`text-sm font-medium ${isComplete ? 'text-green-600' : 'text-amber-600'
+                  <span className={`text-sm font-medium ${isComplete ? 'text-green-500' : 'text-[#d97757]'
                     }`}>
                     {isComplete
                       ? 'All quantities assigned'
@@ -4603,13 +4630,13 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
             <div className="px-6 py-4 overflow-auto max-h-[50vh]">
               {isLoadingBatches ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-                  <span className="ml-2 text-gray-500">Loading batches...</span>
+                  <div className="w-6 h-6 border-2 border-[#3a3a38] border-t-[#d97757] rounded-full animate-spin" />
+                  <span className="ml-2 text-muted-foreground">Loading batches...</span>
                 </div>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-500 border-b border-gray-200">
+                    <tr className="text-left text-muted-foreground border-b border-[#3a3a38]">
                       <th className="pb-3 font-medium w-[140px]">Item</th>
                       <th className="pb-3 font-medium w-[100px]">Qty to assign</th>
                       <th className="pb-3 font-medium w-[160px]">Batch #</th>
@@ -4622,15 +4649,15 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                   <tbody>
                     {batchAssignments.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-8 text-center text-gray-400">
+                        <td colSpan={7} className="py-8 text-center text-muted-foreground">
                           No batches assigned. Click &quot;Add batch&quot; to assign.
                         </td>
                       </tr>
                     ) : (
                       batchAssignments.map((batch, index) => (
-                        <tr key={batch.id} className="border-b border-gray-100">
+                        <tr key={batch.id} className="border-b border-[#3a3a38]/50">
                           {/* Item name - only show on first row */}
-                          <td className="py-3 text-gray-900">
+                          <td className="py-3 text-[#faf9f5]">
                             {index === 0 ? (
                               <span className="font-medium text-xs">
                                 {selectedIngredientForBatch.item_name ||
@@ -4642,7 +4669,7 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                           </td>
 
                           {/* Quantity to assign - only show on first row */}
-                          <td className="py-3 text-gray-600">
+                          <td className="py-3 text-muted-foreground">
                             {index === 0 ? (
                               <span className="text-xs">
                                 {selectedIngredientForBatch.planned_quantity || 0} {selectedIngredientForBatch.unit_of_measure || 'pcs'}
@@ -4656,11 +4683,11 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                               <select
                                 value={batch.batch_number}
                                 onChange={(e) => updateBatchAssignment(index, 'batch_number', e.target.value)}
-                                className="border border-[#3a3a38] rounded px-2 py-1.5 text-sm w-full bg-white focus:border-[#3a3a38] focus:ring-1 focus:ring-blue-500 outline-none"
+                                className="bg-[#1e1e1e] border border-[#3a3a38] rounded px-2 py-1.5 text-sm w-full text-[#faf9f5] focus:border-[#d97757] focus:ring-1 focus:ring-[#d97757] outline-none"
                               >
                                 <option value="">Select batch...</option>
                                 {availableBatches.map(b => (
-                                  <option key={b.id} value={b.batch_number}>
+                                  <option key={b.id} value={b.batch_number} className="bg-[#1e1e1e]">
                                     {b.batch_number} ({b.quantity_available} avail)
                                   </option>
                                 ))}
@@ -4671,13 +4698,13 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                                 value={batch.batch_number}
                                 onChange={(e) => updateBatchAssignment(index, 'batch_number', e.target.value)}
                                 placeholder="Enter batch #"
-                                className="border border-[#3a3a38] rounded px-2 py-1.5 text-sm w-full focus:border-[#3a3a38] focus:ring-1 focus:ring-blue-500 outline-none"
+                                className="bg-[#1e1e1e] border border-[#3a3a38] rounded px-2 py-1.5 text-sm w-full text-[#faf9f5] focus:border-[#d97757] focus:ring-1 focus:ring-[#d97757] outline-none"
                               />
                             )}
                           </td>
 
                           {/* Batch barcode */}
-                          <td className="py-3 text-gray-400 text-xs">
+                          <td className="py-3 text-muted-foreground text-xs">
                             {batch.batch_barcode || '-'}
                           </td>
 
@@ -4689,18 +4716,18 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                                 value={batch.quantity || 0}
                                 onChange={(e) => updateBatchAssignment(index, 'quantity', parseFloat(e.target.value) || 0)}
                                 onFocus={(e) => e.target.select()}
-                                className="border border-[#3a3a38] rounded px-2 py-1.5 text-sm w-20 focus:border-[#3a3a38] focus:ring-1 focus:ring-blue-500 outline-none"
+                                className="bg-[#1e1e1e] border border-[#3a3a38] rounded px-2 py-1.5 text-sm w-20 text-[#faf9f5] focus:border-[#d97757] focus:ring-1 focus:ring-[#d97757] outline-none"
                                 min="0"
                                 step="0.01"
                               />
-                              <span className="text-gray-500 text-xs">
+                              <span className="text-muted-foreground text-xs">
                                 {selectedIngredientForBatch.unit_of_measure || 'pcs'}
                               </span>
                             </div>
                           </td>
 
                           {/* Expiration */}
-                          <td className="py-3 text-gray-600 text-xs">
+                          <td className="py-3 text-muted-foreground text-xs">
                             {batch.expiration_date
                               ? new Date(batch.expiration_date).toLocaleDateString()
                               : '-'
@@ -4711,7 +4738,7 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                           <td className="py-3">
                             <button
                               onClick={() => removeBatchAssignment(index)}
-                              className="text-gray-400 hover:text-red-500 p-1 transition-colors"
+                              className="text-muted-foreground hover:text-[#ff7b6f] p-1 transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -4726,7 +4753,7 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
               {/* Add batch button */}
               <button
                 onClick={addBatchAssignment}
-                className="mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                className="mt-4 text-sm text-[#d97757] hover:text-[#c66a4d] font-medium flex items-center gap-1"
               >
                 <Plus className="w-4 h-4" />
                 Add batch
@@ -4734,20 +4761,20 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+            <div className="px-6 py-4 border-t border-[#3a3a38] flex justify-end gap-3 bg-[#161614]">
               <button
                 onClick={() => {
                   setBatchModalOpen(false);
                   setSelectedIngredientForBatch(null);
                   setBatchAssignments([]);
                 }}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded font-medium transition-colors"
+                className="px-4 py-2 text-muted-foreground hover:bg-secondary/20 rounded font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={saveBatchAssignments}
-                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded font-medium transition-colors"
+                className="px-4 py-2 bg-[#d97757] text-white hover:bg-[#c66a4d] rounded font-medium transition-colors"
               >
                 Confirm
               </button>
@@ -4785,6 +4812,14 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <DeleteConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        onConfirm={confirmDialog.onConfirm}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        actionLabel={confirmDialog.actionLabel}
+      />
     </div>
   );
 }

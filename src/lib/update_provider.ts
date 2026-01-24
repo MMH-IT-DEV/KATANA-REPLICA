@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 import { ManufacturingOrder } from './katana-data-provider';
 
 export interface ManufacturingOrderDetails extends ManufacturingOrder {
+    productSku: string;
     ingredients: Array<{
         id: string;
         variantId: string;
@@ -88,10 +89,10 @@ export async function fetchManufacturingOrder(id: string): Promise<Manufacturing
     }
 
     // Map basic fields (reuse logic if possible, but easier to inline)
-    let prodStatus: ManufacturingOrder['productionStatus'] = 'Not started';
-    if (data.status === 'WORK_IN_PROGRESS') prodStatus = 'Work in progress';
-    if (data.status === 'DONE') prodStatus = 'Done';
-    if (data.status === 'BLOCKED') prodStatus = 'Blocked';
+    let prodStatus: ManufacturingOrder['productionStatus'] = 'not_started';
+    if (data.status === 'WORK_IN_PROGRESS') prodStatus = 'work_in_progress';
+    if (data.status === 'DONE') prodStatus = 'done';
+    if (data.status === 'BLOCKED') prodStatus = 'blocked';
 
     const seconds = data.planned_time_seconds || 0;
     const hours = Math.floor(seconds / 3600);
@@ -139,8 +140,8 @@ export async function fetchManufacturingOrder(id: string): Promise<Manufacturing
     return {
         id: data.id,
         orderNo: data.order_no,
-        creationDate: data.created_at,
-        customer: salesOrder ? `${customer?.name || 'Unknown'} / ${salesOrder.order_no}` : undefined,
+        createdDate: data.created_at,
+        customer: salesOrder ? `${customer?.name || 'Unknown'} / ${salesOrder.order_no}` : 'Stock',
         productName: item?.name || 'Unknown Product',
         productSku: variant?.sku || '-',
         category: category?.name || 'Uncategorized',
@@ -150,7 +151,7 @@ export async function fetchManufacturingOrder(id: string): Promise<Manufacturing
         plannedTime: timeStr,
         productionDeadline: data.due_date || '-',
         deliveryDeadline: salesOrder?.delivery_date || 'All dates',
-        ingredientsStatus: data.status === 'DONE' ? 'Not applicable' : 'In stock', // Mock
+        ingredientsStatus: data.status === 'DONE' ? 'not_available' : 'in_stock', // Mock
         productionStatus: prodStatus,
         rank: data.rank || 'z',
         ingredients,

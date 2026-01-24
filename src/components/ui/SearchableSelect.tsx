@@ -19,6 +19,7 @@ interface SearchableSelectProps {
     showExternalLink?: boolean;
     allowCreate?: boolean;
     createLabel?: string;
+    triggerClassName?: string;
 }
 
 export const SearchableSelect = ({
@@ -32,6 +33,7 @@ export const SearchableSelect = ({
     allowCreate = false,
     createLabel = 'Create',
     onCreate,
+    triggerClassName,
 }: SearchableSelectProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -73,7 +75,7 @@ export const SearchableSelect = ({
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex-1 text-foreground hover:text-muted-foreground text-left flex items-center h-8 cursor-pointer w-full"
+                    className={triggerClassName || "flex-1 text-foreground hover:text-muted-foreground text-left flex items-center h-8 cursor-pointer w-full"}
                 >
                     {selectedOption?.name || placeholder}
                 </button>

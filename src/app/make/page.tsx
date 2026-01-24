@@ -120,7 +120,7 @@ export default function MakePage() {
         rank: 50,
         orderNo: 120,
         customer: 140,
-        productName: 200,
+        productName: 400,
         category: 120,
         completed: 160,
         qty: 100,

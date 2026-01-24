@@ -441,14 +441,13 @@ export function SalesOrderTable() {
                     </div>
                 </div>
             )}
-            {/* Header Controls */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-background">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#3a3a38] bg-background">
                 <div className="flex items-center gap-4">
                     <div className="flex rounded-md bg-secondary/40 p-0.5">
                         <button
                             onClick={() => setActiveTab('Open')}
                             className={cn(
-                                "px-3 py-0.5 font-medium rounded-sm transition-all",
+                                "px-3 py-0.5 font-medium rounded-sm transition-all text-xs",
                                 activeTab === 'Open' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
@@ -457,7 +456,7 @@ export function SalesOrderTable() {
                         <button
                             onClick={() => setActiveTab('Done')}
                             className={cn(
-                                "px-3 py-0.5 font-medium rounded-sm transition-all",
+                                "px-3 py-0.5 font-medium rounded-sm transition-all text-xs",
                                 activeTab === 'Done' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
@@ -466,7 +465,7 @@ export function SalesOrderTable() {
                         <button
                             onClick={() => setActiveTab('All')}
                             className={cn(
-                                "px-3 py-0.5 font-medium rounded-sm transition-all",
+                                "px-3 py-0.5 font-medium rounded-sm transition-all text-xs",
                                 activeTab === 'All' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
@@ -475,40 +474,16 @@ export function SalesOrderTable() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {/* Export/Download Button */}
-                    <button
-                        onClick={() => {
-                            console.log('[Sales] Export clicked');
-                            alert('Export feature - CSV download coming soon');
-                        }}
-                        className="p-1.5 border border-border rounded-md hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground"
-                        title="Export to CSV"
-                    >
-                        <Download size={18} />
-                    </button>
-
-                    {/* Print Button */}
-                    <button
-                        onClick={() => {
-                            console.log('[Sales] Print clicked');
-                            window.print();
-                        }}
-                        className="p-1.5 border border-border rounded-md hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground"
-                        title="Print"
-                    >
-                        <Printer size={18} />
-                    </button>
-
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <button className="flex items-center justify-between gap-2 px-3 py-1.5 bg-[#2a2a28] border border-gray-600 rounded min-w-[140px] text-white hover:bg-[#323230] transition-colors text-xs">
+                            <button className="flex items-center justify-between gap-2 px-3 py-1.5 bg-[#2a2a28] border border-[#3a3a38] rounded min-w-[140px] text-white hover:bg-[#323230] transition-colors text-xs">
                                 <span>All locations</span>
                                 <ChevronDown size={14} className="text-gray-400" />
                             </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-[#1e1e1e] border-gray-700">
-                            <DropdownMenuItem className="text-white hover:bg-gray-800">All locations</DropdownMenuItem>
-                            <DropdownMenuItem className="text-white hover:bg-gray-800">Main Warehouse</DropdownMenuItem>
+                        <DropdownMenuContent className="bg-[#1e1e1e] border-[#3a3a38]">
+                            <DropdownMenuItem className="text-white hover:bg-[#2a2a28] text-xs">All locations</DropdownMenuItem>
+                            <DropdownMenuItem className="text-white hover:bg-[#2a2a28] text-xs">Main Warehouse</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                     <button
@@ -524,11 +499,29 @@ export function SalesOrderTable() {
                 </div>
             </div>
 
-            {/* Stats Line */}
-            <div className="px-4 py-2 border-b border-border text-[11px] text-muted-foreground flex items-center gap-4 bg-muted/5">
-                <span className="font-bold text-foreground">{filteredOrders.length} orders</span>
-                <span className="text-muted-foreground/60">|</span>
-                <span>Total amount: {filteredOrders.reduce((acc, o) => acc + (o.total_amount || 0), 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+            {/* Row 2: Stats + Actions */}
+            <div className="px-4 pb-2 border-b border-[#3a3a38]/50 text-muted-foreground flex items-center justify-between bg-muted/5">
+                <div className="flex items-center gap-4">
+                    <span className="text-[14px] font-bold text-[#faf9f5]">{filteredOrders.length} orders</span>
+                    <span className="text-muted-foreground/60">|</span>
+                    <span className="text-[11px]">Total amount: {filteredOrders.reduce((acc, o) => acc + (o.total_amount || 0), 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => console.log('[Sales] Export clicked')}
+                        className="p-1.5 border border-[#3a3a38] rounded hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground"
+                        title="Export to CSV"
+                    >
+                        <Download size={14} />
+                    </button>
+                    <button
+                        onClick={() => window.print()}
+                        className="p-1.5 border border-[#3a3a38] rounded hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground"
+                        title="Print"
+                    >
+                        <Printer size={14} />
+                    </button>
+                </div>
             </div>
 
             {/* Table Container */}
@@ -564,10 +557,10 @@ export function SalesOrderTable() {
                         <TableSkeleton rows={10} />
                     </div>
                 ) : (
-                    <table className="w-full table-fixed text-left border-collapse whitespace-nowrap">
-                        <thead className="sticky top-0 bg-background z-10 shadow-sm">
-                            <tr className="border-b border-border bg-background h-10">
-                                <th className="px-4 py-3 w-10 bg-background border-r border-border/50">
+                    <table className="w-full text-left border-collapse whitespace-nowrap">
+                        <thead className="sticky top-0 z-10 shadow-sm">
+                            <tr className="border-b border-[#3a3a38]/50 bg-[#222220] h-8">
+                                <th className="px-4 py-1 w-10 bg-[#222220] border-r border-[#3a3a38]/50 text-center">
                                     <Checkbox
                                         className="data-[state=checked]:!bg-[#a5d6ff] data-[state=checked]:!border-[#a5d6ff] data-[state=checked]:!text-[#1a1a18] border-[#3a3a38] size-4"
                                         checked={filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length}
@@ -579,7 +572,7 @@ export function SalesOrderTable() {
                                         key={idx}
                                         style={{ width: columnWidths[col.key], minWidth: 40 }}
                                         className={cn(
-                                            "h-10 px-3 align-middle font-semibold text-muted-foreground uppercase tracking-wider text-[11px] border-r border-border/50 select-none bg-background relative group/header",
+                                            "h-8 px-3 align-middle font-medium text-[#7a7974] uppercase tracking-wider text-[11px] border-r border-[#3a3a38]/50 select-none bg-[#222220] relative group/header",
                                             col.align === 'right' ? 'text-right' : 'text-left'
                                         )}
                                     >
@@ -593,22 +586,22 @@ export function SalesOrderTable() {
                                         />
                                     </th>
                                 ))}
-                                <th className="px-4 py-3 w-10 bg-background"></th>
+                                <th className="px-4 py-1 w-10 bg-[#222220]"></th>
                             </tr>
                             {/* Filter Row */}
-                            <tr className="border-b border-border bg-secondary/5 sticky top-10 z-10">
-                                <th className="p-1 px-2 border-r border-border/50 bg-secondary/5"></th>
+                            <tr className="border-b border-[#3a3a38]/50 bg-[#1a1a18] sticky top-8 z-10">
+                                <th className="p-0.5 px-2 border-r border-[#3a3a38]/50 bg-[#1a1a18] w-10"></th>
                                 {allColumns.map((col) => visibleColumns[col.key] && (
-                                    <th key={col.key} className="p-1 px-2 border-r border-border/50 bg-secondary/5">
+                                    <th key={col.key} style={{ width: columnWidths[col.key], minWidth: 40 }} className="p-0.5 px-2 border-r border-[#3a3a38]/50 bg-[#1a1a18]">
                                         <input
-                                            className="w-full px-2 py-1 border border-border rounded-sm text-[11px] font-normal bg-background focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50"
+                                            className="w-full px-2 py-0.5 border border-[#3a3a38] rounded-sm text-[11px] font-normal bg-background focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50"
                                             placeholder="Filter"
                                             value={filters[col.key as keyof FilterState] || ''}
                                             onChange={(e) => handleFilterChange(col.key as keyof FilterState, e.target.value)}
                                         />
                                     </th>
                                 ))}
-                                <th className="p-1 bg-secondary/5"></th>
+                                <th className="p-0.5 bg-[#1a1a18] w-10"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border bg-background">

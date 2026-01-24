@@ -3,7 +3,6 @@
     "editor.autoClosingBrackets": "always",
     "editor.autoClosingDelete": "always",
     "editor.autoClosingOvertype": "always",
-    "terminal.integrated.enableBell": false,
     "terminal.integrated.showExitAlert": false,
     "terminal.integrated.enableVisualBell": false,
     "accessibility.signals.terminalBell": {

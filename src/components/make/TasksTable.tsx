@@ -118,7 +118,7 @@ export function TasksTable() {
         orderNo: 100,
         moDeadline: 120,
         delDeadline: 120,
-        product: 200,
+        product: 400,
         qty: 120,
         operation: 150,
         type: 100,
@@ -652,13 +652,25 @@ export function TasksTable() {
                         </div>
                     </div>
                 ) : (
-                    <div className="px-4 py-2 border-b border-[#3a3a38]/50 text-[11px] text-muted-foreground flex items-center justify-between bg-muted/5">
+                    <div className="px-4 pb-2 border-b border-[#3a3a38]/50 text-muted-foreground flex items-center justify-between bg-muted/5">
                         <div className="flex items-center gap-4">
-                            <span className="font-bold text-foreground">{totalCount} tasks</span>
+                            <span className="text-[14px] font-bold text-[#faf9f5]">{totalCount} tasks</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button className="hover:text-foreground transition-colors"><Download className="w-3.5 h-3.5" /></button>
-                            <button className="hover:text-foreground transition-colors"><Printer className="w-3.5 h-3.5" /></button>
+                            <button
+                                onClick={() => console.log('[Tasks] Export clicked')}
+                                className="p-1.5 border border-[#3a3a38] rounded hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground"
+                                title="Export to CSV"
+                            >
+                                <Download size={14} />
+                            </button>
+                            <button
+                                onClick={() => window.print()}
+                                className="p-1.5 border border-[#3a3a38] rounded hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground"
+                                title="Print"
+                            >
+                                <Printer size={14} />
+                            </button>
                         </div>
                     </div>
                 )}
@@ -679,15 +691,15 @@ export function TasksTable() {
                 `}</style>
 
                 <table className="w-full text-left border-collapse whitespace-nowrap">
-                    <thead className="sticky top-0 bg-background z-20 shadow-sm">
-                        <tr className="border-b border-[#3a3a38] bg-background h-10">
+                    <thead className="sticky top-0 z-20 shadow-sm">
+                        <tr className="border-b border-[#3a3a38]/50 bg-[#222220] h-8">
                             {/* Checkbox column */}
                             <th
                                 style={{ width: 40, minWidth: 40 }}
-                                className="px-2 h-9 bg-background border-r border-[#3a3a38]/50 text-center sticky left-0 z-30"
+                                className="px-2 h-8 bg-[#222220] border-r border-[#3a3a38]/50 text-center sticky left-0 z-30"
                             >
                                 <Checkbox
-                                    className="data-[state=checked]:!bg-[#a5d6ff] data-[state=checked]:!border-[#a5d6ff] data-[state=checked]:!text-[#1a1a18] border-muted-foreground"
+                                    className="data-[state=checked]:!bg-[#a5d6ff] data-[state=checked]:!border-[#a5d6ff] data-[state=checked]:!text-[#1a1a18] border-[#3a3a38] size-4"
                                     checked={paginatedTasks.length > 0 && selectedTasks.length === paginatedTasks.length}
                                     onCheckedChange={toggleSelectAll}
                                 />
@@ -701,7 +713,7 @@ export function TasksTable() {
                                         key={col.key}
                                         style={{ width: columnWidths[col.key], minWidth: columnWidths[col.key] }}
                                         className={cn(
-                                            "px-3 align-middle font-semibold text-muted-foreground uppercase tracking-wider text-[11px] border-r border-[#3a3a38]/50 select-none bg-background relative group/header",
+                                            "px-3 align-middle font-medium text-[#7a7974] uppercase tracking-wider text-[11px] border-r border-[#3a3a38]/50 select-none bg-[#222220] relative group/header",
                                             col.align === 'center' ? 'text-center' : 'text-left'
                                         )}
                                     >
@@ -711,7 +723,7 @@ export function TasksTable() {
                                                 <TooltipProvider delayDuration={300}>
                                                     <Tooltip>
                                                         <TooltipTrigger>
-                                                            <Info size={11} className="text-muted-foreground/30 hover:text-muted-foreground transition-colors" />
+                                                            <Info size={11} className="text-[#7a7974]/30 hover:text-[#7a7974] transition-colors" />
                                                         </TooltipTrigger>
                                                         <TooltipContent className="bg-[#1e1e1e] border-[#3a3a38] text-xs text-white">
                                                             <p>{col.info}</p>
@@ -728,12 +740,12 @@ export function TasksTable() {
                                     </th>
                                 );
                             })}
-                            <th className="px-4 py-3 w-10 bg-background"></th>
+                            <th className="px-4 py-1 w-10 bg-[#222220]"></th>
                         </tr>
 
                         {/* Filter Row */}
-                        <tr className="border-b border-[#3a3a38] bg-secondary/5 sticky top-9 z-20">
-                            <th className="p-0.5 bg-secondary/5 border-r border-[#3a3a38]/50 sticky left-0 z-30"></th>
+                        <tr className="border-b border-[#3a3a38]/50 bg-[#1a1a18] sticky top-8 z-20">
+                            <th className="p-0.5 bg-[#1a1a18] border-r border-[#3a3a38]/50 sticky left-0 z-30"></th>
                             {allColumns.filter(c => c.key !== 'checkbox').map((col) => {
                                 if (!visibleColumns[col.key]) return null;
 
@@ -741,7 +753,7 @@ export function TasksTable() {
                                     <th
                                         key={`filter-${col.key}`}
                                         style={{ width: columnWidths[col.key], minWidth: columnWidths[col.key] }}
-                                        className="p-0.5 px-2 border-r border-[#3a3a38]/50 bg-secondary/5"
+                                        className="p-0.5 px-2 border-r border-[#3a3a38]/50 bg-[#1a1a18]"
                                     >
                                         <input
                                             className="w-full px-2 py-0.5 border border-[#3a3a38] rounded-sm text-[11px] font-normal bg-background focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50"
@@ -753,7 +765,7 @@ export function TasksTable() {
                                     </th>
                                 );
                             })}
-                            <th className="p-0.5 bg-secondary/5"></th>
+                            <th className="p-0.5 bg-[#1a1a18]"></th>
                         </tr>
                     </thead>
 

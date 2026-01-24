@@ -40,6 +40,7 @@ import {
     Grid
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DeleteConfirmDialog } from '@/components/ui/DeleteConfirmDialog';
 import {
     fetchKatanaItemDetails,
     fetchKatanaRecipe,
@@ -439,15 +440,11 @@ export default function ItemDetailPage() {
             console.log('[Items] Delete aborted: item is null or id is "new"');
             return;
         }
+        setShowItemDeleteConfirm(true);
+    };
 
-        console.log('[Items] Delete request for item:', id, 'name:', name);
-
-        // Show confirmation
-        const confirmed = window.confirm(`Are you sure you want to delete "${name}"?`);
-        if (!confirmed) {
-            console.log('[Items] Delete cancelled by user');
-            return;
-        }
+    const confirmItemDelete = async () => {
+        if (!item || id === 'new') return;
 
         console.log('[Items] Action: Deleting product:', id);
         setSaveStatus('saving');
@@ -461,7 +458,6 @@ export default function ItemDetailPage() {
             }
 
             console.log('[Items] Action: Product deleted successfully');
-            // Redirect to items list
             router.push('/items');
         } catch (err: any) {
             console.error('[Items] Action: Delete failed:', err);
@@ -617,6 +613,7 @@ export default function ItemDetailPage() {
     const [availableOperations, setAvailableOperations] = useState<string[]>([]);
     const [draggedOperationIndex, setDraggedOperationIndex] = useState<number | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null); // operation ID to delete
+    const [showItemDeleteConfirm, setShowItemDeleteConfirm] = useState(false);
     const [activeTimePicker, setActiveTimePicker] = useState<string | null>(null); // operation ID with open time picker
     const [activeOperationPicker, setActiveOperationPicker] = useState<string | null>(null); // operation ID with open operation picker
     const [operationSearchQuery, setOperationSearchQuery] = useState('');
@@ -2858,30 +2855,30 @@ export default function ItemDetailPage() {
 
                             {/* === BIN MODAL === */}
                             <Dialog open={isBinModalOpen} onOpenChange={setIsBinModalOpen}>
-                                <DialogContent className="max-w-xl">
+                                <DialogContent className="max-w-xl bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
                                     <DialogHeader>
-                                        <DialogTitle className="text-sm font-medium">
+                                        <DialogTitle className="text-sm font-medium text-[#faf9f5]">
                                             Default storage setup for<br />
-                                            <span className="text-foreground font-semibold">
+                                            <span className="text-[#faf9f5] font-semibold">
                                                 [{binModalVariant?.sku}] {name} / {binModalVariant?.attributes || 'DEFAULT'}
                                             </span>
                                         </DialogTitle>
                                     </DialogHeader>
-                                    <div className="py-4">
+                                    <div className="py-4 font-normal">
                                         <table className="w-full text-left">
                                             <thead>
-                                                <tr className="border-b border-border text-[11px] text-muted-foreground font-medium uppercase">
+                                                <tr className="border-b border-[#3a3a38] text-[11px] text-muted-foreground font-medium uppercase">
                                                     <th className="p-3">Warehouse <Info size={10} className="inline ml-1" /></th>
                                                     <th className="p-3">Default storage bin <Info size={10} className="inline ml-1" /></th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-border text-sm">
+                                            <tbody className="divide-y divide-[#3a3a38] text-sm">
                                                 {warehouseBins.map(wb => (
-                                                    <tr key={wb.warehouseId} className="hover:bg-secondary/20">
-                                                        <td className="p-3 text-foreground">{wb.warehouseName}</td>
+                                                    <tr key={wb.warehouseId} className="hover:bg-secondary/10 hover:text-white transition-colors">
+                                                        <td className="p-3 text-[#faf9f5]">{wb.warehouseName}</td>
                                                         <td className="p-3">
                                                             <Input
-                                                                className="h-8 text-xs"
+                                                                className="h-8 text-xs bg-[#1e1e1e] border-[#3a3a38] text-[#faf9f5] focus-visible:ring-1 focus-visible:ring-[#3a3a38] focus-visible:border-[#d97757]"
                                                                 placeholder="Select or enter bin"
                                                                 value={wb.bin || ''}
                                                                 onChange={(e) => handleSaveBin(wb.warehouseId, e.target.value)}
@@ -2893,21 +2890,21 @@ export default function ItemDetailPage() {
                                         </table>
                                     </div>
                                     <DialogFooter>
-                                        <Button variant="outline" onClick={() => setIsBinModalOpen(false)}>Close</Button>
+                                        <Button variant="outline" onClick={() => setIsBinModalOpen(false)} className="border-[#3a3a38] text-[#faf9f5] hover:bg-secondary/20">Close</Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
 
                             {/* === MAKE (MO) MODAL === */}
                             <Dialog open={isMakeModalOpen} onOpenChange={setIsMakeModalOpen}>
-                                <DialogContent className="max-w-lg">
+                                <DialogContent className="max-w-lg bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
                                     <DialogHeader>
-                                        <DialogTitle className="text-base font-medium">New manufacturing order</DialogTitle>
+                                        <DialogTitle className="text-base font-medium text-[#faf9f5]">New manufacturing order</DialogTitle>
                                     </DialogHeader>
                                     <div className="py-4 space-y-4">
                                         <div className="space-y-1">
                                             <Label className="text-xs text-muted-foreground">Product</Label>
-                                            <div className="text-sm font-medium text-foreground">
+                                            <div className="text-sm font-medium text-[#faf9f5]">
                                                 [{makeModalVariant?.sku}] {name} / {makeModalVariant?.attributes || 'DEFAULT'}
                                             </div>
                                         </div>
@@ -2917,7 +2914,7 @@ export default function ItemDetailPage() {
                                                 <div className="flex items-center gap-2">
                                                     <Input
                                                         type="number"
-                                                        className="h-9 w-24"
+                                                        className="h-9 w-24 bg-[#1e1e1e] border-[#3a3a38] text-[#faf9f5] focus-visible:ring-1 focus-visible:ring-[#3a3a38] focus-visible:border-[#d97757]"
                                                         value={moQuantity}
                                                         onChange={(e) => setMoQuantity(e.target.value)}
                                                     />
@@ -2926,7 +2923,7 @@ export default function ItemDetailPage() {
                                             </div>
                                             <div className="space-y-1">
                                                 <Label className="text-xs text-muted-foreground">Calculated stock</Label>
-                                                <div className="text-sm font-medium text-foreground pt-2">
+                                                <div className="text-sm font-medium text-[#faf9f5] pt-2">
                                                     {makeModalVariant?.inStock || 0} {item?.uom}
                                                 </div>
                                             </div>
@@ -2940,7 +2937,7 @@ export default function ItemDetailPage() {
                                                 <Label className="text-xs text-muted-foreground">Production deadline</Label>
                                                 <Input
                                                     type="date"
-                                                    className="h-9"
+                                                    className="h-9 bg-[#1e1e1e] border-[#3a3a38] text-[#faf9f5] focus-visible:ring-1 focus-visible:ring-[#3a3a38] focus-visible:border-[#d97757] [color-scheme:dark]"
                                                     value={moDeadline}
                                                     onChange={(e) => setMoDeadline(e.target.value)}
                                                 />
@@ -2949,12 +2946,12 @@ export default function ItemDetailPage() {
                                         <div className="space-y-1">
                                             <Label className="text-xs text-muted-foreground">Main location</Label>
                                             <Select value={moLocation} onValueChange={setMoLocation}>
-                                                <SelectTrigger className="h-9">
+                                                <SelectTrigger className="h-9 bg-[#1e1e1e] border-[#3a3a38] text-[#faf9f5] focus:ring-1 focus:ring-[#3a3a38]">
                                                     <SelectValue />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent className="bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
                                                     {warehouses.map(wh => (
-                                                        <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+                                                        <SelectItem key={wh.id} value={wh.id} className="hover:bg-secondary/20 focus:bg-secondary/20">{wh.name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
@@ -2964,8 +2961,9 @@ export default function ItemDetailPage() {
                                                 id="mo-subassemblies"
                                                 checked={moCreateSubassemblies}
                                                 onCheckedChange={(c) => setMoCreateSubassemblies(c === true)}
+                                                className="border-[#3a3a38] data-[state=checked]:bg-[#d97757] data-[state=checked]:border-[#d97757]"
                                             />
-                                            <label htmlFor="mo-subassemblies" className="text-sm text-foreground cursor-pointer">
+                                            <label htmlFor="mo-subassemblies" className="text-sm text-[#faf9f5] cursor-pointer">
                                                 Create MOs for subassemblies <Info size={12} className="inline text-muted-foreground ml-1" />
                                             </label>
                                         </div>
@@ -2974,11 +2972,11 @@ export default function ItemDetailPage() {
                                         </p>
                                     </div>
                                     <DialogFooter className="gap-2">
-                                        <Button variant="ghost" onClick={() => setIsMakeModalOpen(false)}>Cancel</Button>
-                                        <Button variant="outline" onClick={() => handleCreateMO(true)} className="bg-[#0F172A] text-white hover:bg-[#0F172A]/90">
+                                        <Button variant="ghost" onClick={() => setIsMakeModalOpen(false)} className="text-muted-foreground hover:bg-secondary/20 hover:text-[#faf9f5]">Cancel</Button>
+                                        <Button variant="outline" onClick={() => handleCreateMO(true)} className="bg-transparent border-[#3a3a38] text-[#faf9f5] hover:bg-secondary/20">
                                             Create and open order
                                         </Button>
-                                        <Button onClick={() => handleCreateMO(false)} className="bg-[#0F172A] hover:bg-[#0F172A]/90">
+                                        <Button onClick={() => handleCreateMO(false)} className="bg-[#d97757] text-white hover:bg-[#c66a4d] border-none">
                                             Create and close
                                         </Button>
                                     </DialogFooter>
@@ -2987,14 +2985,14 @@ export default function ItemDetailPage() {
 
                             {/* === SELL (SO) MODAL === */}
                             <Dialog open={isSellModalOpen} onOpenChange={setIsSellModalOpen}>
-                                <DialogContent className="max-w-lg">
+                                <DialogContent className="max-w-lg bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
                                     <DialogHeader>
-                                        <DialogTitle className="text-base font-medium">New sales order</DialogTitle>
+                                        <DialogTitle className="text-base font-medium text-[#faf9f5]">New sales order</DialogTitle>
                                     </DialogHeader>
                                     <div className="py-4 space-y-4">
                                         <div className="space-y-1">
                                             <Label className="text-xs text-muted-foreground">Product</Label>
-                                            <div className="text-sm font-medium text-foreground">
+                                            <div className="text-sm font-medium text-[#faf9f5]">
                                                 [{sellModalVariant?.sku}] {name} / {sellModalVariant?.attributes || 'DEFAULT'}
                                             </div>
                                         </div>
@@ -3004,7 +3002,7 @@ export default function ItemDetailPage() {
                                                 <div className="flex items-center gap-2">
                                                     <Input
                                                         type="number"
-                                                        className="h-9 w-24"
+                                                        className="h-9 w-24 bg-[#1e1e1e] border-[#3a3a38] text-[#faf9f5] focus-visible:ring-1 focus-visible:ring-[#3a3a38] focus-visible:border-[#d97757]"
                                                         value={soQuantity}
                                                         onChange={(e) => setSoQuantity(e.target.value)}
                                                     />
@@ -3013,7 +3011,7 @@ export default function ItemDetailPage() {
                                             </div>
                                             <div className="space-y-1">
                                                 <Label className="text-xs text-muted-foreground">Calculated stock</Label>
-                                                <div className="text-sm font-medium text-foreground pt-2">
+                                                <div className="text-sm font-medium text-[#faf9f5] pt-2">
                                                     {sellModalVariant?.inStock || 0} {item?.uom}
                                                 </div>
                                             </div>
@@ -3022,7 +3020,7 @@ export default function ItemDetailPage() {
                                             <div className="space-y-1">
                                                 <Label className="text-xs text-muted-foreground text-red-500">Customer</Label>
                                                 <Input
-                                                    className="h-9"
+                                                    className="h-9 bg-[#1e1e1e] border-[#3a3a38] text-[#faf9f5] focus-visible:ring-1 focus-visible:ring-[#3a3a38] focus-visible:border-[#d97757]"
                                                     placeholder="Search or create customer"
                                                     value={soCustomer}
                                                     onChange={(e) => setSoCustomer(e.target.value)}
@@ -3038,7 +3036,7 @@ export default function ItemDetailPage() {
                                                 <Label className="text-xs text-muted-foreground">Delivery deadline</Label>
                                                 <Input
                                                     type="date"
-                                                    className="h-9"
+                                                    className="h-9 bg-[#1e1e1e] border-[#3a3a38] text-[#faf9f5] focus-visible:ring-1 focus-visible:ring-[#3a3a38] focus-visible:border-[#d97757] [color-scheme:dark]"
                                                     value={soDeadline}
                                                     onChange={(e) => setSoDeadline(e.target.value)}
                                                 />
@@ -3046,12 +3044,12 @@ export default function ItemDetailPage() {
                                             <div className="space-y-1">
                                                 <Label className="text-xs text-muted-foreground">Ship from</Label>
                                                 <Select value={soLocation} onValueChange={setSoLocation}>
-                                                    <SelectTrigger className="h-9">
+                                                    <SelectTrigger className="h-9 bg-[#1e1e1e] border-[#3a3a38] text-[#faf9f5] focus:ring-1 focus:ring-[#3a3a38]">
                                                         <SelectValue />
                                                     </SelectTrigger>
-                                                    <SelectContent>
+                                                    <SelectContent className="bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
                                                         {warehouses.map(wh => (
-                                                            <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+                                                            <SelectItem key={wh.id} value={wh.id} className="hover:bg-secondary/20 focus:bg-secondary/20">{wh.name}</SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
@@ -3062,11 +3060,11 @@ export default function ItemDetailPage() {
                                         </p>
                                     </div>
                                     <DialogFooter className="gap-2">
-                                        <Button variant="ghost" onClick={() => setIsSellModalOpen(false)}>Cancel</Button>
-                                        <Button variant="outline" onClick={() => handleCreateSO(true)} disabled={!soCustomer}>
+                                        <Button variant="ghost" onClick={() => setIsSellModalOpen(false)} className="text-muted-foreground hover:bg-secondary/20 hover:text-[#faf9f5]">Cancel</Button>
+                                        <Button variant="outline" onClick={() => handleCreateSO(true)} disabled={!soCustomer} className="border-[#3a3a38] text-[#faf9f5] hover:bg-secondary/20">
                                             Create and open order
                                         </Button>
-                                        <Button onClick={() => handleCreateSO(false)} disabled={!soCustomer}>
+                                        <Button onClick={() => handleCreateSO(false)} disabled={!soCustomer} className="bg-[#d97757] text-white hover:bg-[#c66a4d] border-none">
                                             Create and close
                                         </Button>
                                     </DialogFooter>
@@ -3075,56 +3073,56 @@ export default function ItemDetailPage() {
 
                             {/* === DELETE CONFIRMATION MODAL === */}
                             <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                                <DialogContent className="max-w-md">
+                                <DialogContent className="max-w-md bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
                                     <DialogHeader>
-                                        <DialogTitle className="text-base font-medium">Delete variant</DialogTitle>
+                                        <DialogTitle className="text-base font-medium text-[#faf9f5]">Delete variant</DialogTitle>
                                     </DialogHeader>
-                                    <div className="py-4">
+                                    <div className="py-4 font-normal">
                                         <p className="text-sm text-muted-foreground">
-                                            Are you sure you want to delete variant <span className="font-medium text-foreground">[{deleteModalVariant?.sku}]</span>?
+                                            Are you sure you want to delete variant <span className="font-medium text-[#faf9f5]">[{deleteModalVariant?.sku}]</span>?
                                         </p>
-                                        <p className="text-sm text-red-600 mt-2">
+                                        <p className="text-sm text-[#ff7b6f] mt-2">
                                             This action cannot be undone. All related recipes, operations, and inventory records will be removed.
                                         </p>
                                     </div>
                                     <DialogFooter>
-                                        <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
-                                        <Button variant="destructive" onClick={handleDeleteVariant}>Delete</Button>
+                                        <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)} className="border-[#3a3a38] text-[#faf9f5] hover:bg-secondary/20">Cancel</Button>
+                                        <Button variant="destructive" onClick={handleDeleteVariant} className="bg-[#ff4d4d] hover:bg-[#ff3333] text-white border-none">Delete</Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
 
                             {/* === USABILITY CONFIRMATION DIALOG === */}
                             <Dialog open={showUsabilityConfirm} onOpenChange={setShowUsabilityConfirm}>
-                                <DialogContent className="max-w-md">
+                                <DialogContent className="max-w-md bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
                                     <DialogHeader>
-                                        <DialogTitle className="text-base font-medium">
+                                        <DialogTitle className="text-base font-medium text-[#faf9f5]">
                                             {usabilityConfirmAction?.type === 'sell' && 'Disable selling'}
                                             {usabilityConfirmAction?.type === 'buy' && 'Disable buying'}
                                             {usabilityConfirmAction?.type === 'make' && 'Disable making'}
                                             {usabilityConfirmAction?.type === 'kit' && 'Disable kit/bundle'}
                                         </DialogTitle>
                                     </DialogHeader>
-                                    <div className="py-4">
+                                    <div className="py-4 font-normal">
                                         <p className="text-sm text-muted-foreground">
                                             {usabilityConfirmAction?.type === 'sell' && (
                                                 <>
-                                                    This <span className="font-semibold text-foreground">prevents the item from being added to any new sales orders</span>, but doesn&apos;t affect sales orders that already contain the item.
+                                                    This <span className="font-semibold text-[#faf9f5]">prevents the item from being added to any new sales orders</span>, but doesn&apos;t affect sales orders that already contain the item.
                                                 </>
                                             )}
                                             {usabilityConfirmAction?.type === 'buy' && (
                                                 <>
-                                                    This <span className="font-semibold text-foreground">prevents the item from being added to any new purchase orders</span>, but doesn&apos;t affect purchase orders that already contain the item.
+                                                    This <span className="font-semibold text-[#faf9f5]">prevents the item from being added to any new purchase orders</span>, but doesn&apos;t affect purchase orders that already contain the item.
                                                 </>
                                             )}
                                             {usabilityConfirmAction?.type === 'make' && (
                                                 <>
-                                                    This <span className="font-semibold text-foreground">prevents the item from being added to any new manufacturing orders</span>, but doesn&apos;t affect manufacturing orders that already contain the item.
+                                                    This <span className="font-semibold text-[#faf9f5]">prevents the item from being added to any new manufacturing orders</span>, but doesn&apos;t affect manufacturing orders that already contain the item.
                                                 </>
                                             )}
                                             {usabilityConfirmAction?.type === 'kit' && (
                                                 <>
-                                                    This will <span className="font-semibold text-foreground">prevent this item from being a kit/bundle for new orders</span>, but doesn&apos;t affect any orders that already contain this item as a kit/bundle.
+                                                    This will <span className="font-semibold text-[#faf9f5]">prevent this item from being a kit/bundle for new orders</span>, but doesn&apos;t affect any orders that already contain this item as a kit/bundle.
                                                 </>
                                             )}
                                         </p>
@@ -3136,11 +3134,12 @@ export default function ItemDetailPage() {
                                                 setShowUsabilityConfirm(false);
                                                 setUsabilityConfirmAction(null);
                                             }}
+                                            className="border-[#3a3a38] text-[#faf9f5] hover:bg-secondary/20"
                                         >
                                             Cancel
                                         </Button>
                                         <Button
-                                            className="bg-[#d97757] hover:bg-[#c86747] text-white"
+                                            className="bg-[#d97757] hover:bg-[#c86747] text-white border-none"
                                             onClick={() => {
                                                 if (usabilityConfirmAction) {
                                                     setUsability({ ...usability, [usabilityConfirmAction.type]: false });
@@ -3163,60 +3162,60 @@ export default function ItemDetailPage() {
                                     setInventoryIntelData(null);
                                 }
                             }}>
-                                <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+                                <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
                                     {/* Header with ingredient info */}
-                                    <div className="flex items-start justify-between border-b border-border pb-4">
+                                    <div className="flex items-start justify-between border-b border-[#3a3a38] pb-4">
                                         <div>
                                             <div className="text-xs text-muted-foreground">Inventory Intel of</div>
-                                            <div className="text-lg font-medium">
+                                            <div className="text-lg font-medium text-[#faf9f5]">
                                                 [{selectedIngredientForIntel?.sku}] {selectedIngredientForIntel?.name}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-xs text-muted-foreground">Batch #</span>
-                                                <span className="text-sm">- All -</span>
+                                                <span className="text-sm text-[#faf9f5]">- All -</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-xs text-muted-foreground">Location</span>
-                                                <span className="text-sm">MMH Kelowna</span>
+                                                <span className="text-sm text-[#faf9f5]">MMH Kelowna</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Stock Summary Cards */}
-                                    <div className="grid grid-cols-5 gap-3 py-4 border-b border-border">
-                                        <div className="border border-border rounded-lg p-3 bg-secondary/5">
+                                    <div className="grid grid-cols-5 gap-3 py-4 border-b border-[#3a3a38]">
+                                        <div className="border border-[#3a3a38] rounded-lg p-3 bg-secondary/5">
                                             <div className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">In stock</div>
-                                            <div className="text-lg font-semibold">
+                                            <div className="text-lg font-semibold text-[#faf9f5]">
                                                 {loadingInventoryIntel ? '...' : (inventoryIntelData?.inStock?.toFixed(5) || '0')}
                                                 <span className="text-xs text-muted-foreground font-normal ml-1">{inventoryIntelData?.uom || selectedIngredientForIntel?.uom || 'pcs'}</span>
                                             </div>
                                         </div>
-                                        <div className="border border-border rounded-lg p-3 bg-secondary/5">
+                                        <div className="border border-[#3a3a38] rounded-lg p-3 bg-secondary/5">
                                             <div className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">Expected</div>
-                                            <div className="text-lg font-semibold">
+                                            <div className="text-lg font-semibold text-[#faf9f5]">
                                                 {loadingInventoryIntel ? '...' : (inventoryIntelData?.expected || 0)}
                                                 <span className="text-xs text-muted-foreground font-normal ml-1">{inventoryIntelData?.uom || selectedIngredientForIntel?.uom || 'pcs'}</span>
                                             </div>
                                         </div>
-                                        <div className="border border-border rounded-lg p-3 bg-secondary/5">
+                                        <div className="border border-[#3a3a38] rounded-lg p-3 bg-secondary/5">
                                             <div className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">Committed</div>
-                                            <div className="text-lg font-semibold">
+                                            <div className="text-lg font-semibold text-[#faf9f5]">
                                                 {loadingInventoryIntel ? '...' : (inventoryIntelData?.committed || 0)}
                                                 <span className="text-xs text-muted-foreground font-normal ml-1">{inventoryIntelData?.uom || selectedIngredientForIntel?.uom || 'pcs'}</span>
                                             </div>
                                         </div>
-                                        <div className="border border-border rounded-lg p-3 bg-secondary/5">
+                                        <div className="border border-[#3a3a38] rounded-lg p-3 bg-secondary/5">
                                             <div className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">Safety stock</div>
-                                            <div className="text-lg font-semibold">
+                                            <div className="text-lg font-semibold text-[#faf9f5]">
                                                 {loadingInventoryIntel ? '...' : (inventoryIntelData?.safetyStock || 0)}
                                                 <span className="text-xs text-muted-foreground font-normal ml-1">{inventoryIntelData?.uom || selectedIngredientForIntel?.uom || 'pcs'}</span>
                                             </div>
                                         </div>
-                                        <div className="border border-border rounded-lg p-3 bg-secondary/5">
+                                        <div className="border border-[#3a3a38] rounded-lg p-3 bg-secondary/5">
                                             <div className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">Calculated stock</div>
-                                            <div className="text-lg font-semibold">
+                                            <div className="text-lg font-semibold text-[#faf9f5]">
                                                 {loadingInventoryIntel ? '...' : (inventoryIntelData?.calculatedStock?.toFixed(5) || '0')}
                                                 <span className="text-xs text-muted-foreground font-normal ml-1">{inventoryIntelData?.uom || selectedIngredientForIntel?.uom || 'pcs'}</span>
                                             </div>
@@ -3224,11 +3223,11 @@ export default function ItemDetailPage() {
                                     </div>
 
                                     {/* Action buttons */}
-                                    <div className="flex items-center gap-2 py-3 border-b border-border">
-                                        <Button variant="outline" size="sm" className="text-xs">
+                                    <div className="flex items-center gap-2 py-3 border-b border-[#3a3a38]">
+                                        <Button variant="outline" size="sm" className="text-xs border-[#3a3a38] text-[#faf9f5] hover:bg-secondary/20">
                                             Export
                                         </Button>
-                                        <Button variant="outline" size="sm" className="text-xs">
+                                        <Button variant="outline" size="sm" className="text-xs border-[#3a3a38] text-[#faf9f5] hover:bg-secondary/20">
                                             Buy
                                         </Button>
                                     </div>
@@ -3236,8 +3235,8 @@ export default function ItemDetailPage() {
                                     {/* Stock Movements Table */}
                                     <div className="flex-1 overflow-auto">
                                         <table className="w-full text-sm">
-                                            <thead className="sticky top-0 bg-background">
-                                                <tr className="border-b border-border bg-secondary/10 text-[11px] text-muted-foreground uppercase tracking-wider">
+                                            <thead className="sticky top-0 bg-[#1a1a18]">
+                                                <tr className="border-b border-[#3a3a38] bg-secondary/10 text-[11px] text-muted-foreground uppercase tracking-wider">
                                                     <th className="px-3 py-2 text-left font-medium whitespace-nowrap">
                                                         <div className="flex items-center gap-1">
                                                             Movement date <Info size={10} className="text-muted-foreground" />
@@ -3275,27 +3274,27 @@ export default function ItemDetailPage() {
                                                     </th>
                                                 </tr>
                                                 {/* Filter row */}
-                                                <tr className="border-b border-border bg-secondary/5">
+                                                <tr className="border-b border-[#3a3a38] bg-secondary/5">
                                                     <th className="px-3 py-1">
-                                                        <Input className="h-6 text-xs bg-transparent border-border" placeholder="All dates" />
+                                                        <Input className="h-6 text-xs bg-transparent border-[#3a3a38] text-[#faf9f5] focus-visible:ring-1 focus-visible:ring-[#3a3a38]" placeholder="All dates" />
                                                     </th>
                                                     <th className="px-3 py-1">
-                                                        <Input className="h-6 text-xs bg-transparent border-border" placeholder="Filter" />
+                                                        <Input className="h-6 text-xs bg-transparent border-[#3a3a38] text-[#faf9f5] focus-visible:ring-1 focus-visible:ring-[#3a3a38]" placeholder="Filter" />
                                                     </th>
                                                     <th className="px-3 py-1">
-                                                        <Input className="h-6 text-xs bg-transparent border-border text-right" placeholder="Filter" />
+                                                        <Input className="h-6 text-xs bg-transparent border-[#3a3a38] text-[#faf9f5] text-right focus-visible:ring-1 focus-visible:ring-[#3a3a38]" placeholder="Filter" />
                                                     </th>
                                                     <th className="px-3 py-1">
-                                                        <Input className="h-6 text-xs bg-transparent border-border text-right" placeholder="Filter" />
+                                                        <Input className="h-6 text-xs bg-transparent border-[#3a3a38] text-[#faf9f5] text-right focus-visible:ring-1 focus-visible:ring-[#3a3a38]" placeholder="Filter" />
                                                     </th>
                                                     <th className="px-3 py-1">
-                                                        <Input className="h-6 text-xs bg-transparent border-border text-right" placeholder="Filter" />
+                                                        <Input className="h-6 text-xs bg-transparent border-[#3a3a38] text-[#faf9f5] text-right focus-visible:ring-1 focus-visible:ring-[#3a3a38]" placeholder="Filter" />
                                                     </th>
                                                     <th className="px-3 py-1">
-                                                        <Input className="h-6 text-xs bg-transparent border-border text-right" placeholder="Filter" />
+                                                        <Input className="h-6 text-xs bg-transparent border-[#3a3a38] text-[#faf9f5] text-right focus-visible:ring-1 focus-visible:ring-[#3a3a38]" placeholder="Filter" />
                                                     </th>
                                                     <th className="px-3 py-1">
-                                                        <Input className="h-6 text-xs bg-transparent border-border text-right" placeholder="Filter" />
+                                                        <Input className="h-6 text-xs bg-transparent border-[#3a3a38] text-[#faf9f5] text-right focus-visible:ring-1 focus-visible:ring-[#3a3a38]" placeholder="Filter" />
                                                     </th>
                                                 </tr>
                                             </thead>
@@ -3847,14 +3846,14 @@ export default function ItemDetailPage() {
                                                             {activeOperationPicker === op.id && (
                                                                 <>
                                                                     <div className="fixed inset-0 z-[9998]" onClick={() => setActiveOperationPicker(null)} />
-                                                                    <div className="absolute left-0 top-full mt-1 bg-[#1f1f1d] border border-gray-600 rounded-lg shadow-2xl z-[9999] w-[300px] max-h-[350px] flex flex-col">
+                                                                    <div className="absolute left-0 top-full mt-1 bg-[#1f1f1d] border border-[#3a3a38] rounded-lg shadow-2xl z-[9999] w-[300px] max-h-[350px] flex flex-col">
                                                                         {/* Header */}
-                                                                        <div className="px-3 py-2 text-xs text-gray-400 border-b border-gray-700">
+                                                                        <div className="px-3 py-2 text-xs text-gray-400 border-b border-[#3a3a38]">
                                                                             Select operation
                                                                         </div>
                                                                         {/* Search Input */}
-                                                                        <div className="p-3 border-b border-gray-700">
-                                                                            <div className="flex items-center gap-2 px-3 py-2 bg-[#2a2a28] rounded border border-gray-600 focus-within:border-gray-500">
+                                                                        <div className="p-3 border-b border-[#3a3a38]">
+                                                                            <div className="flex items-center gap-2 px-3 py-2 bg-[#2a2a28] rounded border border-[#3a3a38] focus-within:border-[#d97757]">
                                                                                 <Search className="w-4 h-4 text-gray-500" />
                                                                                 <input
                                                                                     type="text"
@@ -4268,35 +4267,14 @@ export default function ItemDetailPage() {
                             </div>
 
                             {/* === DELETE OPERATION CONFIRMATION DIALOG === */}
-                            <Dialog open={!!showDeleteConfirm} onOpenChange={(open) => !open && setShowDeleteConfirm(null)}>
-                                <DialogContent className="max-w-sm">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-base font-medium flex items-center gap-2">
-                                            <Trash2 size={16} className="text-red-500" />
-                                            Delete Operation
-                                        </DialogTitle>
-                                    </DialogHeader>
-                                    <div className="py-4">
-                                        <p className="text-sm text-muted-foreground">
-                                            Are you sure you want to delete this operation? This action cannot be undone.
-                                        </p>
-                                    </div>
-                                    <DialogFooter className="gap-2">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setShowDeleteConfirm(null)}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            onClick={confirmDeleteOperation}
-                                        >
-                                            Delete
-                                        </Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
+                            <DeleteConfirmDialog
+                                open={!!showDeleteConfirm}
+                                onOpenChange={(open) => !open && setShowDeleteConfirm(null)}
+                                onConfirm={confirmDeleteOperation}
+                                title="Delete Operation"
+                                description="Are you sure you want to delete this operation? This action cannot be undone."
+                                actionLabel="Delete"
+                            />
 
                             {/* === COPY OPERATIONS FROM MODAL === */}
                             <Dialog open={showCopyOpsItemModal} onOpenChange={setShowCopyOpsItemModal}>
@@ -5422,6 +5400,15 @@ export default function ItemDetailPage() {
                     </div>
                 </div>
             )}
+            {/* Item Delete confirmation */}
+            <DeleteConfirmDialog
+                open={showItemDeleteConfirm}
+                onOpenChange={setShowItemDeleteConfirm}
+                onConfirm={confirmItemDelete}
+                title={`Delete the "${name}" ${type.toLowerCase()}?`}
+                description={`Are you sure you want to delete this ${type.toLowerCase()}? This action cannot be undone.`}
+                actionLabel="Delete"
+            />
         </Shell >
     );
 }

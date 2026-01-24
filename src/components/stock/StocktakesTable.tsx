@@ -208,12 +208,12 @@ export function StocktakesTable() {
 
     // Column definitions
     const allColumns = [
-        { key: 'stocktakeNumber', label: 'Stocktake #' },
-        { key: 'reason', label: 'Stocktake reason' },
-        { key: 'createdDate', label: 'Created date' },
-        { key: 'completedDate', label: 'Completed date' },
-        { key: 'stockAdjustmentNumber', label: 'Stock adjustment #' },
-        { key: 'status', label: 'Status' },
+        { key: 'stocktakeNumber', label: 'Stocktake #', align: 'left' },
+        { key: 'reason', label: 'Stocktake reason', align: 'left' },
+        { key: 'createdDate', label: 'Created date', align: 'left' },
+        { key: 'completedDate', label: 'Completed date', align: 'left' },
+        { key: 'stockAdjustmentNumber', label: 'Stock adjustment #', align: 'left' },
+        { key: 'status', label: 'Status', align: 'left' },
     ];
 
     // Filters State

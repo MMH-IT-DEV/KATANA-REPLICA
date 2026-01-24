@@ -238,7 +238,7 @@ export function StockAdjustmentsTable() {
     };
 
     // Shared Menu Styles - Dark theme matching Inventory page
-    const menuStyles = "fixed z-50 bg-[#1e1e1e] border border-gray-700 rounded-md shadow-lg py-1 min-w-[200px] animate-in fade-in-0 zoom-in-95";
+    const menuStyles = "fixed z-50 bg-[#1e1e1e] border border-[#3a3a38] rounded-md shadow-lg py-1 min-w-[200px] animate-in fade-in-0 zoom-in-95";
     const menuItemStyles = "flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-[#2a2a28] transition-colors text-xs text-white rounded mx-1";
 
     // Close menu on outside click
@@ -409,7 +409,7 @@ export function StockAdjustmentsTable() {
                             Reset
                         </button>
                     </div>
-                    <div className="h-px bg-gray-700 mx-1 mb-1"></div>
+                    <div className="h-px bg-[#3a3a38] mx-1 mb-1"></div>
 
                     <div className="py-1">
                         {allColumns.map((col) => (
@@ -454,14 +454,14 @@ export function StockAdjustmentsTable() {
                         {/* Location Dropdown */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <button className="flex items-center justify-between gap-2 px-3 py-2 bg-[#2a2a28] border border-gray-600 rounded min-w-[140px] text-white hover:bg-[#323230] transition-colors text-xs">
+                                <button className="flex items-center justify-between gap-2 px-3 py-2 bg-[#2a2a28] border border-[#3a3a38] rounded min-w-[140px] text-white hover:bg-[#323230] transition-colors text-xs">
                                     <span>{locationFilter}</span>
                                     <ChevronDown size={14} className="text-gray-400" />
                                 </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56 bg-[#1e1e1e] border-gray-700">
+                            <DropdownMenuContent align="end" className="w-56 bg-[#1e1e1e] border-[#3a3a38]">
                                 <DropdownMenuLabel className="text-gray-400 text-[11px] uppercase tracking-wider">Filter by Location</DropdownMenuLabel>
-                                <DropdownMenuSeparator className="bg-gray-700" />
+                                <DropdownMenuSeparator className="bg-[#3a3a38]" />
                                 <DropdownMenuItem className="text-white hover:bg-[#2a2a28] text-xs" onClick={() => setLocationFilter('All locations')}>
                                     All locations
                                 </DropdownMenuItem>

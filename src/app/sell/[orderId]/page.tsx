@@ -6,7 +6,7 @@ import { Shell } from '@/components/layout/Shell';
 import { OrderDetail } from '@/components/sell/OrderDetail';
 import { fetchSalesOrder } from '@/lib/katana-data-provider';
 import { SalesOrder } from '@/lib/mock-data';
-import { SELL_NAV_GROUPS } from '../page';
+import { SELL_NAV_GROUPS } from '../constants';
 
 export default function OrderDetailPage() {
   const params = useParams();

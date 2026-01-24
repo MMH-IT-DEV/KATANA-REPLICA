@@ -2277,3 +2277,274 @@ export async function deleteSupplier(id: string): Promise<{ error: any }> {
 
     return { error };
 }
+
+// ============ SETTINGS ============
+
+export interface Setting {
+    id: string;
+    key: string;
+    value: string;
+    value_type: 'string' | 'number' | 'boolean' | 'json';
+    description?: string;
+}
+
+export async function fetchSettings(): Promise<Setting[]> {
+    const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .order('key');
+
+    if (error) {
+        console.error('Error fetching settings:', error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function fetchSetting(key: string): Promise<Setting | null> {
+    const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('key', key)
+        .single();
+
+    if (error) {
+        console.error('Error fetching setting:', error);
+        return null;
+    }
+    return data;
+}
+
+export async function updateSetting(key: string, value: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('settings')
+        .update({ value, updated_at: new Date().toISOString() })
+        .eq('key', key);
+
+    if (error) {
+        console.error('Error updating setting:', error);
+        return false;
+    }
+    return true;
+}
+
+
+// ============ UNITS OF MEASURE ============
+
+export interface UnitOfMeasure {
+    id: string;
+    name: string;
+    category?: string;
+    is_default: boolean;
+    sort_order: number;
+}
+
+export async function fetchUnitsOfMeasure(): Promise<UnitOfMeasure[]> {
+    const { data, error } = await supabase
+        .from('units_of_measure')
+        .select('*')
+        .order('name');
+
+    if (error) {
+        console.error('Error fetching units:', error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function createUnitOfMeasure(name: string, category?: string): Promise<UnitOfMeasure | null> {
+    const { data, error } = await supabase
+        .from('units_of_measure')
+        .insert({ name, category, is_default: false })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating unit:', error);
+        return null;
+    }
+    return data;
+}
+
+export async function updateUnitOfMeasure(id: string, name: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('units_of_measure')
+        .update({ name, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error updating unit:', error);
+        return false;
+    }
+    return true;
+}
+
+export async function deleteUnitOfMeasure(id: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+        .from('units_of_measure')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error deleting unit:', error);
+        if (error.code === '23503') {
+            return {
+                success: false,
+                error: 'Cannot delete this unit of measure - it is still in use.'
+            };
+        }
+        return {
+            success: false,
+            error: error.message || 'Failed to delete unit of measure.'
+        };
+    }
+    return { success: true };
+}
+
+// ============ TAX RATES ============
+
+export interface TaxRate {
+    id: string;
+    rate: number;
+    name: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export async function fetchTaxRates(): Promise<TaxRate[]> {
+    const { data, error } = await supabase
+        .from('tax_rates')
+        .select('*')
+        .order('rate');
+
+    if (error) {
+        console.error('Error fetching tax rates:', error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function createTaxRate(rate: number, name: string): Promise<TaxRate | null> {
+    const { data, error } = await supabase
+        .from('tax_rates')
+        .insert({ rate, name })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating tax rate:', error);
+        return null;
+    }
+    return data;
+}
+
+export async function updateTaxRate(id: string, rate: number, name: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('tax_rates')
+        .update({ rate, name, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error updating tax rate:', error);
+        return false;
+    }
+    return true;
+}
+
+export async function deleteTaxRate(id: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+        .from('tax_rates')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error deleting tax rate:', error);
+
+        if (error.code === '23503') {
+            return {
+                success: false,
+                error: 'Cannot delete this tax rate - it is still in use.'
+            };
+        }
+
+        return {
+            success: false,
+            error: error.message || 'Failed to delete tax rate.'
+        };
+    }
+    return { success: true };
+}
+
+// ============ CATEGORIES ============
+
+export interface Category {
+    id: string;
+    name: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export async function fetchCategories(): Promise<Category[]> {
+    const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+
+    if (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function createCategory(name: string): Promise<Category | null> {
+    const { data, error } = await supabase
+        .from('categories')
+        .insert({ name })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating category:', error);
+        return null;
+    }
+    return data;
+}
+
+export async function updateCategory(id: string, name: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('categories')
+        .update({ name, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error updating category:', error);
+        return false;
+    }
+    return true;
+}
+
+export async function deleteCategory(id: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error deleting category:', error);
+
+        // Check for foreign key constraint error
+        if (error.code === '23503') {
+            return {
+                success: false,
+                error: 'Cannot delete this category - it is still in use by items.'
+            };
+        }
+
+        return {
+            success: false,
+            error: error.message || 'Failed to delete category.'
+        };
+    }
+    return { success: true };
+}

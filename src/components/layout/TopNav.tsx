@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from "@/lib/utils";
-import { Search, Command } from "lucide-react";
+import { Search, Command, Settings } from "lucide-react";
 import Link from 'next/link';
 
 interface TopNavProps {
@@ -57,6 +57,11 @@ export function TopNav({ activeTab = 'Stock', onTabChange }: TopNavProps) {
 
       {/* Right Actions */}
       <div className="flex items-center gap-3">
+        <Link href="/settings">
+          <button className="p-1.5 text-muted-foreground hover:text-[#faf9f5] hover:bg-[#3a3a38]/50 rounded-md transition-all mr-1" title="Settings">
+            <Settings size={18} />
+          </button>
+        </Link>
         <button className="px-3 py-1.5 bg-foreground hover:bg-foreground/90 text-background rounded-md text-[12px] font-medium transition-all shadow-sm">
           Sign in
         </button>
