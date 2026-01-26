@@ -17,7 +17,7 @@ interface DeleteConfirmDialogProps {
     onOpenChange: (open: boolean) => void;
     onConfirm: () => void;
     title: string;
-    description: string;
+    description: React.ReactNode;
     actionLabel?: string;
     cancelLabel?: string;
 }
@@ -34,21 +34,26 @@ export function DeleteConfirmDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="max-w-[320px] bg-[#1a1a18] border-[#3a3a38] rounded-xl p-4 gap-4 shadow-2xl"
-                showCloseButton={false}
+                className="max-w-md bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5] p-0 overflow-hidden shadow-2xl"
+                onOpenAutoFocus={(e) => e.preventDefault()}
             >
-                <DialogHeader className="gap-1 text-left">
-                    <DialogTitle className="text-base font-semibold text-[#faf9f5] tracking-tight">
+                <DialogHeader className="px-5 pt-5 pb-2 text-left">
+                    <DialogTitle className="text-lg font-semibold tracking-tight">
                         {title}
                     </DialogTitle>
-                    <DialogDescription className="text-[13px] text-[#7a7974] leading-normal font-normal">
-                        {description}
-                    </DialogDescription>
                 </DialogHeader>
-                <DialogFooter className="flex flex-row justify-end gap-2 sm:justify-end mt-1">
+
+                <div className="px-5 pt-1 pb-4 space-y-3">
+                    <div className="text-[13px] text-[#faf9f5] leading-relaxed">
+                        {description}
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3 px-5 py-4 bg-[#1a1a18]">
                     <Button
+                        variant="ghost"
                         onClick={() => onOpenChange(false)}
-                        className="h-8 px-4 bg-[#1a1a18] border border-[#3a3a38] text-[#faf9f5] hover:bg-[#222221] hover:text-[#faf9f5] rounded-md text-xs font-medium transition-colors"
+                        className="h-8 px-4 text-sm font-medium border border-[#3a3a38] hover:bg-white/[0.05] text-[#faf9f5]"
                     >
                         {cancelLabel}
                     </Button>
@@ -57,11 +62,11 @@ export function DeleteConfirmDialog({
                             onConfirm();
                             onOpenChange(false);
                         }}
-                        className="h-8 px-4 bg-[#ff7b6f] text-white hover:bg-[#ff7b6f]/90 rounded-md text-xs font-medium transition-colors border-0"
+                        className="h-8 px-3 bg-[#d97371] hover:bg-[#d97371]/90 text-white text-sm font-medium shadow-sm transition-colors"
                     >
                         {actionLabel}
                     </Button>
-                </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     );

@@ -14,7 +14,8 @@ INSERT INTO settings (key, value, value_type, description) VALUES
   ('currency', 'CAD', 'string', 'Base currency code'),
   ('currency_locked', 'true', 'boolean', 'Whether currency can be changed'),
   ('default_delivery_time_days', '14', 'number', 'Default delivery time for sales orders in days'),
-  ('default_lead_time_days', '14', 'number', 'Default lead time for purchase orders in days')
+  ('default_lead_time_days', '14', 'number', 'Default lead time for purchase orders in days'),
+  ('inventory_closing_date', NULL, 'string', 'Inventory closing date for costing')
 ON CONFLICT (key) DO NOTHING;
 
 -- Create UNITS_OF_MEASURE table

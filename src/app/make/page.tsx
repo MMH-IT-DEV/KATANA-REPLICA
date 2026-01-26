@@ -210,6 +210,7 @@ export default function MakePage() {
 
     const [draggedColIdx, setDraggedColIdx] = useState<number | null>(null);
     const [draggedRowIdx, setDraggedRowIdx] = useState<number | null>(null);
+    const [dragOverRowIdx, setDragOverRowIdx] = useState<number | null>(null);
 
     const updateStatus = async (orderId: string, newStatus: ManufacturingOrder['productionStatus']) => {
         // Store former status for potential revert
@@ -952,6 +953,11 @@ export default function MakePage() {
                                             onDragOver={(e) => {
                                                 e.preventDefault();
                                                 if (draggedRowIdx === null || draggedRowIdx === index) return;
+                                                setDragOverRowIdx(index);
+                                            }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                if (draggedRowIdx === null || draggedRowIdx === index) return;
                                                 const newOrders = [...orders];
                                                 const fromIdx = orders.findIndex(o => o.id === filteredOrders[draggedRowIdx].id);
                                                 const toIdx = orders.findIndex(o => o.id === filteredOrders[index].id);
@@ -959,16 +965,21 @@ export default function MakePage() {
                                                     const item = newOrders.splice(fromIdx, 1)[0];
                                                     newOrders.splice(toIdx, 0, item);
                                                     setOrders(newOrders);
-                                                    setDraggedRowIdx(index);
                                                 }
+                                                setDraggedRowIdx(null);
+                                                setDragOverRowIdx(null);
                                             }}
-                                            onDragEnd={() => setDraggedRowIdx(null)}
+                                            onDragEnd={() => {
+                                                setDraggedRowIdx(null);
+                                                setDragOverRowIdx(null);
+                                            }}
                                             className={cn(
                                                 "h-10 transition-colors border-b border-border/50",
                                                 selectedOrders.includes(order.id)
                                                     ? "bg-[#5b9bd5]/10"
                                                     : "hover:bg-secondary/20 group",
-                                                draggedRowIdx === index && "bg-secondary/30 opacity-50"
+                                                draggedRowIdx === index && "bg-secondary/30 opacity-50",
+                                                dragOverRowIdx === index && draggedRowIdx !== index && "border-t-2 border-t-[#d97757]"
                                             )}
                                         >
                                             {/* Checkbox cell - scrolls with table */}
@@ -990,7 +1001,9 @@ export default function MakePage() {
                                                     case 'rank':
                                                         return (
                                                             <td key={col.key} style={cellStyle} className={cn(baseClass, "text-center text-muted-foreground font-mono")}>
-                                                                {order.rank}
+                                                                <div className="flex items-center justify-center gap-1.5 drag-handle cursor-grab active:cursor-grabbing">
+                                                                    <GripVertical size={14} className="opacity-50" />
+                                                                </div>
                                                             </td>
                                                         );
                                                     case 'orderNo':

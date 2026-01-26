@@ -148,7 +148,7 @@ export default function Categories() {
                 <div className="mt-2 text-sm text-[#7a7974] leading-relaxed max-w-2xl">
                     <p className="mb-1">
                         <span className={cn(
-                            "transition-opacity duration-100",
+                            "transition-opacity duration-200",
                             isTooltipOpen && "opacity-40"
                         )}>
                             Use categories to organize items, enhancing inventory management efficiency.
@@ -158,11 +158,11 @@ export default function Categories() {
                             description="Categories help you organize and filter items in your inventory. Group similar items together for easier management."
                             onOpenChange={setIsTooltipOpen}
                         >
-                            <span className="ml-1 text-[#faf9f5] font-medium inline-flex items-center gap-1 transition-all cursor-pointer">Learn more</span>
+                            <span className="ml-1 text-[#faf9f5] font-medium inline-flex items-center gap-1 transition-all cursor-pointer">Read more</span>
                         </HelpTooltip>
                     </p>
                     <p className={cn(
-                        "transition-opacity duration-100",
+                        "transition-opacity duration-200",
                         isTooltipOpen && "opacity-40"
                     )}>
                         By grouping similar items, categories facilitate more straightforward navigation and filtering.

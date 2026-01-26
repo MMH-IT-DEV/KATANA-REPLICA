@@ -615,9 +615,8 @@ export function ItemsTable() {
 
                                 router.push(`/items/${itemId}?type=${type}`);
                             }}
-                            className="flex items-center gap-1 bg-[#d97757] border border-[#e08868] text-white hover:bg-[#e08868] rounded px-3 py-2 text-xs font-medium transition-colors"
+                            className="flex items-center gap-1 bg-white border border-[#e5e5e5] text-[#1a1a18] hover:bg-[#f5f5f5] rounded px-3 py-2 text-xs font-medium transition-colors"
                         >
-                            <Plus size={14} />
                             {activeTab === 'Products' ? 'Product' : activeTab === 'Materials' ? 'Material' : 'Service'}
                         </button>
                     </div>

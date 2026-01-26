@@ -719,7 +719,7 @@ export default function StocktakeDetailPage() {
                                                 </td>
                                             )}
                                             {visibleColumns.category && <td className="px-3 py-1 text-muted-foreground border-r border-border/50">{item.category}</td>}
-                                            {visibleColumns.internalBarcode && <td className="px-3 py-1 font-mono text-[11px] text-[#faf9f5]/50 border-r border-border/50">{item.internal_barcode}</td>}
+                                            {visibleColumns.internalBarcode && <td className="px-3 py-1 font-mono text-[11px] text-[#faf9f5] border-r border-border/50">{item.internal_barcode}</td>}
                                             {visibleColumns.registeredBarcode && <td className="px-3 py-1 font-mono text-[11px] text-[#faf9f5]/50 border-r border-border/50 italic">{item.registered_barcode}</td>}
                                             {visibleColumns.supplierItemCode && <td className="px-3 py-1 font-mono text-[11px] text-[#faf9f5]/50 border-r border-border/50 italic">{item.supplier_item_code}</td>}
                                             {visibleColumns.batchNumber && <td className="px-3 py-1 font-medium text-[#faf9f5] border-r border-border/50">{item.batch_number || '-'}</td>}

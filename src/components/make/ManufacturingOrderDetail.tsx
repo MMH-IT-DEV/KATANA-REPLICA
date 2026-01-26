@@ -3390,7 +3390,7 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                     <React.Fragment key={ing.id}>
                       <tr className="hover:bg-secondary/20 transition-colors group">
                         <td className="px-3 py-1 text-muted-foreground text-xs border-r border-border/50 font-medium">
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
                             {/* Expand/collapse for batch-tracked items */}
                             {ing.is_batch_tracked ? (
                               <button
@@ -3408,9 +3408,8 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
                                 {expandedIngredients.has(ing.id) ? '▼' : '▶'}
                               </button>
                             ) : (
-                              <GripVertical size={12} className="text-muted-foreground/50 cursor-grab" />
+                              <GripVertical size={14} className="text-muted-foreground/50 cursor-grab" />
                             )}
-                            {idx + 1}.
                           </div>
                         </td>
                         <td className="px-3 py-1 border-r border-border/50">
@@ -4783,35 +4782,14 @@ export function ManufacturingOrderDetail({ initialOrder }: ManufacturingOrderDet
         </div>
       )}
       {/* === DELETE CONFIRMATION DIALOG === */}
-      <Dialog open={!!showDeleteConfirm} onOpenChange={(open) => !open && setShowDeleteConfirm(null)}>
-        <DialogContent className="max-w-sm bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
-          <DialogHeader>
-            <DialogTitle className="text-base font-medium flex items-center gap-2 text-[#faf9f5]">
-              <Trash2 size={16} className="text-[#ff7b6f]" />
-              Delete {showDeleteConfirm?.type === 'operation' ? 'Operation' : 'Ingredient'}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground pt-3">
-              Are you sure you want to delete this {showDeleteConfirm?.type}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteConfirm(null)}
-              className="bg-transparent border-[#3a3a38] text-[#faf9f5] hover:bg-[#2a2a28] hover:text-[#faf9f5]"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-              className="bg-[#ff4d4d] hover:bg-[#ff3333] text-white border-none"
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteConfirmDialog
+        open={!!showDeleteConfirm}
+        onOpenChange={(open) => !open && setShowDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title={`Delete ${showDeleteConfirm?.type === 'operation' ? 'Operation' : 'Ingredient'}`}
+        description={`Are you sure you want to delete this ${showDeleteConfirm?.type}? This action cannot be undone.`}
+        actionLabel="Delete"
+      />
       <DeleteConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}

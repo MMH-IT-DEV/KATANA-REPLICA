@@ -1,0 +1,286 @@
+KEY FILES TO KNOW:
+┌─────────────────────────────────────────────┬───────────────────┐
+│ File                                        │ Purpose           │
+├─────────────────────────────────────────────┼───────────────────┤
+│ src/app/items/[id]/page.tsx                 │ Reference for UI  │
+│ src/components/make/ManufacturingOrderDetail│ MO detail (big!)  │
+│ src/lib/katana-data-provider.ts             │ DB queries        │
+│ src/components/ui/StatusDropdown.tsx        │ Status component  │
+└─────────────────────────────────────────────┴───────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6: DESIGN SYSTEM (MEMORIZE THIS!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+THEME: Dark mode (main app) / Light mode (some modals)
+
+COLOR PALETTE:
+┌────────────────────┬─────────────┬─────────────────────────────┐
+│ Use Case           │ Color       │ Tailwind Class              │
+├────────────────────┼─────────────┼─────────────────────────────┤
+│ Page Background    │ #1a1a18     │ bg-[#1a1a18]                │
+│ Card/Panel BG      │ #262624     │ bg-[#262624]                │
+│ Hover BG           │ #3a3a38     │ bg-[#3a3a38]                │
+├────────────────────┼─────────────┼─────────────────────────────┤
+│ Primary Text       │ #faf9f5     │ text-[#faf9f5]              │
+│ Secondary Text     │ #bebcb3     │ text-[#bebcb3]              │
+│ Muted Text         │ #7a7974     │ text-[#7a7974]              │
+├────────────────────┼─────────────┼─────────────────────────────┤
+│ Accent (Coral)     │ #d97757     │ text-[#d97757]              │
+│ Success (Green)    │ #8aaf6e     │ text-[#8aaf6e]              │
+│ Warning (Amber)    │ #bb8b5d     │ text-[#bb8b5d]              │
+│ Error (Red)        │ #ff7b6f     │ text-[#ff7b6f]              │
+├────────────────────┼─────────────┼─────────────────────────────┤
+│ Border             │ #3a3a38     │ border-[#3a3a38]            │
+└────────────────────┴─────────────┴─────────────────────────────┘
+
+STATUS BADGE PATTERN:
+```tsx
+// Success (Done, In stock, etc.)
+className="bg-[#8aaf6e]/20 text-[#8aaf6e] border border-[#8aaf6e]/30"
+
+// Warning (In progress, Expected, etc.)
+className="bg-[#bb8b5d]/20 text-[#bb8b5d] border border-[#bb8b5d]/30"
+
+// Error (Blocked, Not available, etc.)
+className="bg-[#ff7b6f]/20 text-[#ff7b6f] border border-[#ff7b6f]/30"
+
+// Neutral (Not started, etc.)
+className="bg-gray-400/20 text-gray-400 border border-gray-400/30"
+```
+
+TABLE PATTERN:
+```tsx
+<table className="w-full">
+  <thead>
+    <tr className="bg-[#262624] border-b border-[#3a3a38]">
+      <th className="py-3 px-3 text-left text-sm text-[#bebcb3] font-medium">
+        Column Name
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr className="border-b border-[#3a3a38]/50 hover:bg-[#262624]">
+      <td className="py-3 px-3 text-[#faf9f5]">Value</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+EDITABLE INPUT PATTERN:
+```tsx
+<input
+  type="text"
+  value={value}
+  onChange={(e) => setValue(e.target.value)}
+  onBlur={() => saveToDatabase()}
+  className="bg-transparent text-[#faf9f5] 
+             border-b border-transparent 
+             hover:border-[#3a3a38] 
+             focus:border-[#d97757] 
+             outline-none"
+/>
+```
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7: CODE PATTERNS & CONVENTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. SAFE NUMBER (Prevent DB overflow - ALWAYS USE!):
+```typescript
+const safeNumber = (value: any, max = 99999999, decimals = 4): number => {
+  if (!value) return 0;
+  let num = parseFloat(String(value));
+  if (isNaN(num) || !isFinite(num)) return 0;
+  if (num > max) num = max;
+  if (num < -max) num = -max;
+  return Number(num.toFixed(decimals));
+};
+```
+
+2. TIME HANDLING:
+```typescript
+// Format seconds to display
+const formatTime = (seconds: number): string => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h} h ${m} m`;
+};
+
+// Safe time conversion
+const safeTimeSeconds = (value: any): number => {
+  const num = parseInt(String(value)) || 0;
+  const MAX = 365 * 24 * 60 * 60; // 1 year max
+  return Math.min(Math.max(0, num), MAX);
+};
+```
+
+3. SUPABASE QUERY PATTERN:
+```typescript
+const loadData = async () => {
+  const { data, error } = await supabase
+    .from('table_name')
+    .select(`
+      *,
+      related:related_table(id, name)
+    `)
+    .eq('id', id)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('[loadData] Error:', error);
+    return;
+  }
+  
+  setData(data || []);
+};
+```
+
+4. UPDATE PATTERN:
+```typescript
+const handleUpdate = async (id: string, updates: any) => {
+  // Sanitize numeric fields
+  const sanitized = { ...updates };
+  if ('cost' in updates) sanitized.cost = safeNumber(updates.cost);
+  
+  const { error } = await supabase
+    .from('table_name')
+    .update(sanitized)
+    .eq('id', id);
+
+  if (error) {
+    console.error('[handleUpdate] Error:', error);
+    showToast('Update failed', 'error');
+    return;
+  }
+
+  await loadData(); // Refresh
+  showToast('Updated successfully', 'success');
+};
+```
+
+5. COMPONENT STATE PATTERN:
+```typescript
+const [data, setData] = useState<any[]>([]);
+const [isLoading, setIsLoading] = useState(true);
+const [selectedItem, setSelectedItem] = useState<any>(null);
+const [modalOpen, setModalOpen] = useState(false);
+
+useEffect(() => {
+  loadData();
+}, [id]); // Reload when ID changes
+```
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8: CURRENT PROJECT STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ COMPLETED:
+┌──────────────────────────────────────────────────────────────────┐
+│ Items Module (100%)                                              │
+│ • General Info tab - product/material details                    │
+│ • Product Recipe/BOM tab - ingredients with quantities           │
+│ • Production Operations tab - operations with TIME PICKER        │
+│ • Supply Details tab - suppliers, lead times                     │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ Make Module - MO Detail Page (95%)                               │
+│ • Header with status, planned/actual qty, dates                  │
+│ • Ingredients table with availability, costs, Buy button         │
+│ • Operations table with 4 types (Process, Setup, Per unit, Fixed)│
+│ • Batch tracking modal (GMP compliance)                          │
+│ • Status dropdowns (MO level and operation level)                │
+│ • Done date auto-set on completion                               │
+│ • Numeric overflow protection                                    │
+└──────────────────────────────────────────────────────────────────┘
+
+🔄 IN PROGRESS:
+┌──────────────────────────────────────────────────────────────────┐
+│ Time Picker for MO Operations                                    │
+│ • Need hrs:min:sec inputs (like Product page has)                │
+│ • For both Planned and Actual time                               │
+│ • Should recalculate costs when time changes                     │
+└──────────────────────────────────────────────────────────────────┘
+
+⏸️ PENDING:
+- Print templates (6 types)
+- Schedule/Tasks tabs
+- Stock module completion
+- Make list page improvements
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9: YOUR FIRST TASKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TASK 0: EXPLORATION (Do this first!)
+────────────────────────────────────
+Before coding, explore the codebase:
+```bash
+# 1. Project structure
+ls -la src/app/
+ls -la src/components/ui/
+
+# 2. Items page - REFERENCE for UI patterns
+cat src/app/items/[id]/page.tsx | head -600
+
+# 3. Look for existing time picker
+grep -rn "hrs\|min\|sec\|TimePicker\|time" src/app/items/ | head -30
+
+# 4. MO Detail component structure
+head -300 src/components/make/ManufacturingOrderDetail.tsx
+
+# 5. Check for existing UI components
+ls src/components/ui/
+```
+
+After exploring, report:
+- What time picker pattern exists in Items page?
+- What's the structure of ManufacturingOrderDetail?
+- What UI components are available?
+
+────────────────────────────────────
+TASK 1: ADD TIME PICKER TO MO OPERATIONS
+────────────────────────────────────
+After exploration, implement:
+
+1. Find the time picker in Items > Production Operations tab
+2. Create similar component for MO Operations table
+3. Allow editing Planned time (hrs:min:sec)
+4. Allow editing Actual time (hrs:min:sec)
+5. Recalculate operation cost when time changes
+
+REFERENCE: See screenshot in conversation showing:
+- Three inputs: hrs | min | sec
+- Labels above each input
+- Dark background inputs
+- Colons between fields
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 10: COMMUNICATION TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WHEN YOU'RE STUCK:
+- Say "I need clarification on X"
+- Say "I found pattern A but also pattern B - which to use?"
+- Say "This would require changing Y - should I proceed?"
+
+WHEN YOU FIND ISSUES:
+- Say "Found existing bug: [description]"
+- Say "This conflicts with existing code at [location]"
+- Say "Suggest improvement: [idea]"
+
+WHEN REPORTING PROGRESS:
+- Be specific: "Added TimePicker component (lines 150-200)"
+- Not vague: "Updated the file"
+
+ASKING GOOD QUESTIONS:
+✅ "The Items page uses X pattern but MO uses Y - should I unify?"
+❌ "How do I do this?"
+
+✅ "I see safeNumber is used in handleUpdate but not in handleCreate - intentional?"  
+❌ "Is this right?"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Ready? Start with TASK 0: EXPLORATION and report back!

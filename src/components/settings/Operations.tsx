@@ -25,6 +25,47 @@ export default function Operations() {
     const [editValue, setEditValue] = useState('');
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+    const handleDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        // Add a ghost image or some styling if needed
+        const target = e.target as HTMLElement;
+        target.classList.add('opacity-50');
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        setDragOverIndex(index);
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        if (draggedIndex === null || draggedIndex === index) return;
+
+        const newOperations = [...operations];
+        const [movedItem] = newOperations.splice(draggedIndex, 1);
+        newOperations.splice(index, 0, movedItem);
+
+        // Update the order property based on new positions
+        const updatedOperations = newOperations.map((op, idx) => ({
+            ...op,
+            order: idx + 1
+        }));
+
+        setOperations(updatedOperations);
+        setDraggedIndex(null);
+    };
+
+    const handleDragEnd = (e: React.DragEvent) => {
+        const target = e.target as HTMLElement;
+        target.classList.remove('opacity-50');
+        setDraggedIndex(null);
+        setDragOverIndex(null);
+    };
 
     const handleAddOperation = () => {
         const newOperation: Operation = {
@@ -85,7 +126,7 @@ export default function Operations() {
                 <div className="mt-2 text-sm text-[#7a7974] leading-relaxed max-w-4xl">
                     <p>
                         <span className={cn(
-                            "transition-opacity duration-100",
+                            "transition-opacity duration-200",
                             isTooltipOpen && "opacity-40"
                         )}>
                             Define all of the steps and actions needed to produce products in your manufacturing or outsourced manufacturing process. The order listed here represents the order in which they will appear in the dropdown menu when choosing operations.
@@ -95,7 +136,7 @@ export default function Operations() {
                             description="Operations represent the individual steps in your manufacturing process. You can reorder them by dragging, and they will appear in this order when creating manufacturing orders."
                             onOpenChange={setIsTooltipOpen}
                         >
-                            <span className="ml-1 text-[#faf9f5] font-medium inline-flex items-center gap-1 transition-all cursor-pointer">Learn more</span>
+                            <span className="ml-1 text-[#faf9f5] font-medium inline-flex items-center gap-1 transition-all cursor-pointer">Read more</span>
                         </HelpTooltip>
                     </p>
                 </div>
@@ -116,13 +157,24 @@ export default function Operations() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#3a3a38] text-[13px]">
-                        {operations.map((operation) => (
+                        {operations.map((operation, index) => (
                             <tr
                                 key={operation.id}
-                                className="h-8 hover:bg-secondary/20 transition-colors group"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, index)}
+                                onDragOver={(e) => handleDragOver(e, index)}
+                                onDrop={(e) => handleDrop(e, index)}
+                                onDragEnd={handleDragEnd}
+                                className={cn(
+                                    "h-8 hover:bg-secondary/20 transition-colors group cursor-default",
+                                    draggedIndex === index && "opacity-50",
+                                    dragOverIndex === index && draggedIndex !== index && "border-t-2 border-t-[#d97757]"
+                                )}
                             >
-                                <td className="px-2 py-1 border-r border-[#3a3a38]/50 text-center">
-                                    <GripVertical className="w-4 h-4 text-[#5a5a58] cursor-grab active:cursor-grabbing mx-auto" />
+                                <td className="px-2 py-1 border-r border-[#3a3a38]/50 text-center cursor-grab active:cursor-grabbing">
+                                    <div className="flex items-center justify-center">
+                                        <GripVertical size={14} className="text-[#5a5a58] opacity-50 group-hover:opacity-100 transition-opacity mx-auto" />
+                                    </div>
                                 </td>
                                 <td className="px-2 py-1 border-r border-[#3a3a38]/50">
                                     {editingId === operation.id ? (

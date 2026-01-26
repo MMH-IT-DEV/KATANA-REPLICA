@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { HelpCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchSettings, updateSetting } from '@/lib/katana-data-provider';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -56,11 +55,7 @@ export default function Barcodes() {
     const [isLoading, setIsLoading] = useState(true);
     const [isTooltipOpen, setIsTooltipOpen] = useState(false);
 
-    useEffect(() => {
-        loadSettings();
-    }, []);
-
-    const loadSettings = async () => {
+    const loadSettings = useCallback(async () => {
         setIsLoading(true);
         const data = await fetchSettings();
 
@@ -72,7 +67,16 @@ export default function Barcodes() {
 
         setSettings(settingsObj);
         setIsLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+        const init = async () => {
+            if (isMounted) await loadSettings();
+        };
+        init();
+        return () => { isMounted = false; };
+    }, [loadSettings]);
 
     const handleToggle = async (key: string, value: boolean) => {
         setSettings(prev => ({ ...prev, [key]: value }));
@@ -95,7 +99,7 @@ export default function Barcodes() {
                 <div className="mt-2 text-sm text-[#7a7974] leading-relaxed max-w-4xl">
                     <p>
                         <span className={cn(
-                            "transition-opacity duration-100",
+                            "transition-opacity duration-200",
                             isTooltipOpen && "opacity-40"
                         )}>
                             Barcodes offer a reliable method for tracking movements and reducing errors both in and outside of Katana. Below, you can enable/disable different types of barcodes depending on your needs.
@@ -105,8 +109,8 @@ export default function Barcodes() {
                             description="Barcodes help you track inventory movements, reduce manual data entry errors, and speed up warehouse operations. Different barcode types serve different purposes in your workflow."
                             onOpenChange={setIsTooltipOpen}
                         >
-                            <span className="ml-1 text-[#4A90E2] font-medium inline-flex items-center gap-1 transition-all cursor-pointer hover:underline">
-                                Learn more about barcodes
+                            <span className="ml-1 text-[#faf9f5] font-medium inline-flex items-center gap-1 transition-all cursor-pointer">
+                                Read more
                             </span>
                         </HelpTooltip>
                     </p>
@@ -115,51 +119,58 @@ export default function Barcodes() {
 
             {/* Toggle List */}
             <div className="max-w-3xl space-y-2">
-                {barcodeSettings.map((setting) => (
-                    <div
-                        key={setting.key}
-                        className={cn(
-                            "flex items-center gap-4 py-3",
-                            setting.indent && "pl-12 py-2"
-                        )}
-                    >
-                        <div className="flex-1 flex items-center gap-3">
-                            {setting.type === 'checkbox' ? (
-                                <div className="flex items-center gap-3">
-                                    <Checkbox
-                                        id={setting.key}
-                                        checked={settings[setting.key] || false}
-                                        onCheckedChange={(checked) => handleToggle(setting.key, !!checked)}
-                                        className="border-[#5a5a58] data-[state=checked]:bg-[#4A90E2] data-[state=checked]:border-[#4A90E2]"
-                                    />
-                                    <label
-                                        htmlFor={setting.key}
-                                        className="text-[13px] text-[#faf9f5] cursor-pointer select-none"
-                                    >
-                                        {setting.label}
-                                    </label>
-                                </div>
-                            ) : (
-                                <div className="flex-1 flex items-center justify-between">
+                {barcodeSettings.map((setting) => {
+                    // Conditional rendering for nested options
+                    if (setting.indent && !settings['barcode_internal']) {
+                        return null;
+                    }
+
+                    return (
+                        <div
+                            key={setting.key}
+                            className={cn(
+                                "flex items-center gap-4 py-3",
+                                setting.indent && "pl-12 py-2"
+                            )}
+                        >
+                            <div className="flex-1 flex items-center gap-3">
+                                {setting.type === 'checkbox' ? (
                                     <div className="flex items-center gap-3">
-                                        <Switch
+                                        <Checkbox
                                             id={setting.key}
                                             checked={settings[setting.key] || false}
-                                            onCheckedChange={(checked) => handleToggle(setting.key, checked)}
-                                            className="data-[state=checked]:bg-[#4A90E2]"
+                                            onCheckedChange={(checked) => handleToggle(setting.key, !!checked)}
+                                            className="border-[#5a5a58] data-[state=checked]:bg-[#4A90E2] data-[state=checked]:border-transparent data-[state=checked]:text-black focus-visible:ring-0"
                                         />
                                         <label
                                             htmlFor={setting.key}
-                                            className="text-[14px] text-[#faf9f5] font-medium cursor-pointer select-none"
+                                            className="text-[13px] text-[#faf9f5] cursor-pointer select-none"
                                         >
                                             {setting.label}
                                         </label>
                                     </div>
-                                </div>
-                            )}
+                                ) : (
+                                    <div className="flex-1 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Switch
+                                                id={setting.key}
+                                                checked={settings[setting.key] || false}
+                                                onCheckedChange={(checked) => handleToggle(setting.key, checked)}
+                                                className="checked:bg-[#538fc1] data-[state=checked]:bg-[#538fc1]"
+                                            />
+                                            <label
+                                                htmlFor={setting.key}
+                                                className="text-[14px] text-[#faf9f5] font-medium cursor-pointer select-none"
+                                            >
+                                                {setting.label}
+                                            </label>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

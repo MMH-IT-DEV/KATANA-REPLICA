@@ -2306,7 +2306,7 @@ export async function fetchSetting(key: string): Promise<Setting | null> {
         .from('settings')
         .select('*')
         .eq('key', key)
-        .single();
+        .maybeSingle();
 
     if (error) {
         console.error('Error fetching setting:', error);

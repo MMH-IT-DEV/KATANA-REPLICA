@@ -29,6 +29,8 @@ export default function CustomFields() {
         }
     ]);
     const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     const toggleCollection = (id: string) => {
         setCollections(prev => prev.map(c =>
@@ -65,7 +67,7 @@ export default function CustomFields() {
                 }
                 const newField: CustomField = {
                     id: Math.random().toString(36).substr(2, 9),
-                    name: 'New custom field',
+                    name: '',
                     placesShown: ['Sales orders']
                 };
                 return { ...c, fields: [...c.fields, newField] };
@@ -86,30 +88,26 @@ export default function CustomFields() {
     return (
         <div className="max-w-[1600px] mx-auto p-6 space-y-6">
             {/* Header */}
-            <div className="space-y-4 max-w-4xl">
-                <p className="text-sm text-[#7a7974] leading-relaxed">
-                    <span className={cn(
-                        "transition-opacity duration-100",
-                        isTooltipOpen && "opacity-40"
-                    )}>
-                        Manage custom fields for items by organizing them into different collections. Each collection can include <span className="text-[#faf9f5] font-medium">up to 3 fields</span>, and the value of the fields can be defined on each item.
-                    </span>
-                    <br />
-                    <span className={cn(
-                        "transition-opacity duration-100",
-                        isTooltipOpen && "opacity-40"
-                    )}>
-                        Use the <span className="text-[#faf9f5] font-medium">Places where shown</span> column to select the types of orders in which each custom field can be found.
-                    </span>
-                    <HelpTooltip
-                        title="Custom fields"
-                        description="Custom fields allow you to add additional information to items that can be displayed on sales orders, purchase orders, and other documents."
-                        onOpenChange={setIsTooltipOpen}
-                    >
-                        <span className="ml-1 text-[#faf9f5] font-medium inline-flex items-center gap-1 transition-all cursor-pointer">Learn more</span>
-                    </HelpTooltip>
-                </p>
+            <div>
                 <h1 className="text-xl font-medium text-foreground tracking-tight">Custom fields on Items</h1>
+                <div className="mt-2 text-sm text-[#7a7974] leading-relaxed max-w-4xl">
+                    <p>
+                        <span className={cn(
+                            "transition-opacity duration-100",
+                            isTooltipOpen && "opacity-40"
+                        )}>
+                            Manage custom fields for items by organizing them into different collections. Each collection can include <span className="text-[#faf9f5] font-medium">up to 3 fields</span>, and the value of the fields can be defined on each item.
+                            Use the <span className="text-[#faf9f5] font-medium">Places where shown</span> column to select the types of orders in which each custom field can be found.
+                        </span>
+                        <HelpTooltip
+                            title="Custom fields"
+                            description="Custom fields allow you to add additional information to items that can be displayed on sales orders, purchase orders, and other documents."
+                            onOpenChange={setIsTooltipOpen}
+                        >
+                            <span className="ml-1 text-[#faf9f5] font-medium inline-flex items-center gap-1 transition-all cursor-pointer">Learn more</span>
+                        </HelpTooltip>
+                    </p>
+                </div>
             </div>
 
             {/* Collections List */}
@@ -120,25 +118,24 @@ export default function CustomFields() {
                         <div className="flex items-start group mb-4">
                             <button
                                 onClick={() => toggleCollection(collection.id)}
-                                className="mt-[26px] mr-3 text-muted-foreground hover:text-foreground transition-colors pt-1"
+                                className="mt-[22px] mr-3 text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 {collection.isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                             </button>
 
                             <div className="flex-1 flex items-end justify-between">
                                 <div className="space-y-1.5 flex-1 max-w-md">
-                                    <label className="text-[11px] uppercase font-semibold text-[#7a7974] tracking-wider ml-0.5">
+                                    <label className="text-[11px] uppercase font-bold text-[#7a7974] tracking-wider ml-0.5">
                                         Collection name
                                     </label>
                                     <input
                                         type="text"
                                         value={collection.name}
                                         onChange={(e) => updateCollectionName(collection.id, e.target.value)}
-                                        className="block w-full bg-[#1a1a18] border border-[#3a3a38] hover:border-[#5a5a58] focus:outline-none focus:ring-2 focus:ring-[#d97757] focus:border-transparent rounded-md text-sm px-3 py-2 text-[#faf9f5] transition-all placeholder:text-[#5a5a58]"
+                                        className="block w-full bg-[#1a1a18] border border-[#3a3a38] hover:border-[#5a5a58] focus:outline-none focus:ring-1 focus:ring-[#d97757] focus:border-[#d97757] rounded-md text-[13px] px-3 py-2 text-[#faf9f5] transition-all placeholder:text-[#5a5a58]"
                                         placeholder="Enter collection name..."
                                     />
                                 </div>
-
                             </div>
                         </div>
 
@@ -146,19 +143,69 @@ export default function CustomFields() {
                         {collection.isExpanded && (
                             <div className="ml-8 space-y-4">
                                 {collection.fields.length > 0 ? (
-                                    <div className="bg-background rounded-lg border border-[#3a3a38]/40 overflow-hidden max-w-4xl shadow-sm">
+                                    <div className="bg-background rounded-lg border border-border overflow-hidden max-w-4xl shadow-sm">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="h-8 bg-[#222220] border-b border-[#3a3a38]/40 text-[10px] uppercase font-bold text-[#7a7974] tracking-widest">
-                                                    <th className="px-4 py-0 align-middle border-r border-[#3a3a38]/20 w-[45%]">Field name</th>
-                                                    <th className="px-4 py-0 align-middle">Places where shown</th>
-                                                    <th className="px-4 py-0 w-10"></th>
+                                                <tr className="h-8 bg-[#222220] border-b border-[#3a3a38]/50">
+                                                    <th className="px-3 py-0 w-10 align-middle border-r border-[#3a3a38]/50"></th>
+                                                    <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 w-[45%]">
+                                                        <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">
+                                                            Field name
+                                                        </span>
+                                                    </th>
+                                                    <th className="px-3 py-0 align-middle">
+                                                        <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">
+                                                            Places where shown
+                                                        </span>
+                                                    </th>
+                                                    <th className="px-3 py-0 w-16 text-center bg-[#222220]"></th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-[#3a3a38]/20">
-                                                {collection.fields.map(field => (
-                                                    <tr key={field.id} className="group/row hover:bg-white/[0.015] transition-colors h-9">
-                                                        <td className="py-0 px-4 border-r border-[#3a3a38]/20 align-middle">
+                                            <tbody className="divide-y divide-[#3a3a38] text-[13px]">
+                                                {collection.fields.map((field, fIdx) => (
+                                                    <tr
+                                                        key={field.id}
+                                                        draggable
+                                                        onDragStart={(e) => {
+                                                            setDraggedIndex(fIdx);
+                                                            e.dataTransfer.effectAllowed = 'move';
+                                                        }}
+                                                        onDragOver={(e) => {
+                                                            e.preventDefault();
+                                                            setDragOverIndex(fIdx);
+                                                        }}
+                                                        onDrop={(e) => {
+                                                            e.preventDefault();
+                                                            if (draggedIndex === null || draggedIndex === fIdx) return;
+
+                                                            setCollections(prev => prev.map(c => {
+                                                                if (c.id === collection.id) {
+                                                                    const newFields = [...c.fields];
+                                                                    const [movedItem] = newFields.splice(draggedIndex, 1);
+                                                                    newFields.splice(fIdx, 0, movedItem);
+                                                                    return { ...c, fields: newFields };
+                                                                }
+                                                                return c;
+                                                            }));
+                                                            setDraggedIndex(null);
+                                                            setDragOverIndex(null);
+                                                        }}
+                                                        onDragEnd={() => {
+                                                            setDraggedIndex(null);
+                                                            setDragOverIndex(null);
+                                                        }}
+                                                        className={cn(
+                                                            "h-10 hover:bg-secondary/20 transition-colors group cursor-default",
+                                                            draggedIndex === fIdx && "opacity-50",
+                                                            dragOverIndex === fIdx && draggedIndex !== fIdx && "border-t-2 border-t-[#d97757]"
+                                                        )}
+                                                    >
+                                                        <td className="px-2 py-1 border-r border-[#3a3a38]/50 text-center cursor-grab active:cursor-grabbing">
+                                                            <div className="flex items-center justify-center">
+                                                                <GripVertical size={14} className="text-[#5a5a58] opacity-50 group-hover:opacity-100 transition-opacity mx-auto" />
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-0 px-3 border-r border-[#3a3a38]/50 align-middle">
                                                             <input
                                                                 type="text"
                                                                 value={field.name}
@@ -177,8 +224,8 @@ export default function CustomFields() {
                                                                 placeholder="Field name..."
                                                             />
                                                         </td>
-                                                        <td className="py-0 px-4 align-middle">
-                                                            <div className="flex flex-wrap gap-1.5">
+                                                        <td className="py-0 px-3 align-middle border-r border-[#3a3a38]/50">
+                                                            <div className="flex flex-wrap gap-1.5 py-1">
                                                                 {field.placesShown.map(place => (
                                                                     <button
                                                                         key={place}
@@ -192,24 +239,25 @@ export default function CustomFields() {
                                                                 </button>
                                                             </div>
                                                         </td>
-                                                        <td className="py-0 px-2 text-right align-middle">
+                                                        <td className="py-0 px-2 text-center align-middle">
                                                             <button
                                                                 onClick={() => deleteField(collection.id, field.id)}
-                                                                className="text-[#ff7b6f]/70 hover:text-[#ff7b6f] opacity-0 group-hover/row:opacity-100 hover:bg-[#ff7b6f]/10 p-1.5 rounded transition-all"
+                                                                className="text-[#ff7b6f] opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-[#ff7b6f]/10 rounded"
+                                                                title="Delete"
                                                             >
-                                                                <Trash2 size={13} />
+                                                                <Trash2 size={14} />
                                                             </button>
                                                         </td>
                                                     </tr>
                                                 ))}
-                                                {/* Pattern: Add Row Button Inside Table */}
-                                                <tr className="bg-transparent">
-                                                    <td colSpan={3} className="p-1.5">
+                                                {/* Add Row Button Inside Table */}
+                                                <tr className="bg-transparent border-t border-[#3a3a38]">
+                                                    <td colSpan={4} className="p-2">
                                                         <button
-                                                            className="text-[#7a7974] hover:text-[#d97757] hover:bg-white/[0.03] h-7 px-2.5 text-[11px] font-medium flex items-center gap-1.5 transition-all rounded w-full"
+                                                            className="text-muted-foreground hover:text-primary hover:bg-secondary/50 h-8 px-2 text-xs font-medium flex items-center gap-1.5 transition-colors rounded"
                                                             onClick={() => addFieldToCollection(collection.id)}
                                                         >
-                                                            <Plus size={13} className="mb-0.5" /> Add new field
+                                                            <Plus size={14} /> Add row
                                                         </button>
                                                     </td>
                                                 </tr>

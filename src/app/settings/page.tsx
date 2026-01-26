@@ -10,6 +10,11 @@ import Costing from '@/components/settings/Costing';
 import CustomFields from '@/components/settings/CustomFields';
 import Barcodes from '@/components/settings/Barcodes';
 import Operations from '@/components/settings/Operations';
+import Resources from '@/components/settings/Resources';
+import Locations from '@/components/settings/Locations';
+import PrintTemplates from '@/components/settings/PrintTemplates';
+import Manufacturing from '@/components/settings/Manufacturing';
+import DataImport from '@/components/settings/DataImport';
 import { NavGroup } from '@/components/layout/Shell';
 
 export default function SettingsPage() {
@@ -41,10 +46,7 @@ export default function SettingsPage() {
             title: "System",
             items: [
                 { name: "Print templates", id: "print-templates" },
-                { name: "Warehouse app", id: "warehouse-app" },
                 { name: "Manufacturing", id: "manufacturing" },
-                { name: "Katana API", id: "katana-api" },
-                { name: "Katana AI assistant", id: "ai-assistant" },
                 { name: "Data import", id: "data-import" }
             ]
         }
@@ -68,6 +70,16 @@ export default function SettingsPage() {
                 return <Barcodes />;
             case 'operations':
                 return <Operations />;
+            case 'resources':
+                return <Resources />;
+            case 'locations':
+                return <Locations />;
+            case 'print-templates':
+                return <PrintTemplates />;
+            case 'manufacturing':
+                return <Manufacturing />;
+            case 'data-import':
+                return <DataImport />;
             default:
                 // Pattern: Empty State for upcoming pages
                 return (

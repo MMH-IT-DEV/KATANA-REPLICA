@@ -201,8 +201,9 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
     box-shadow: none !important;
+    outline: none !important;
   }
 
   body {
@@ -290,4 +291,16 @@
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--bg-hover) var(--bg-base);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }

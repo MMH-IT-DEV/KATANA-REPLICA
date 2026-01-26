@@ -81,7 +81,7 @@ export default function HelpTooltip({
     const handleMouseLeave = () => {
         hoverTimeout.current = setTimeout(() => {
             updateVisibility(false);
-        }, 100); // 100ms quick buffer
+        }, 50); // 50ms snappier close
     };
 
     const tooltipContent = isVisible && (
@@ -95,12 +95,10 @@ export default function HelpTooltip({
                 left: coords.left,
                 zIndex: 100,
             }}
-        // Removed pointer-events-none to allow interaction
         >
-            {/* Added invisible padding bridge to prevent gap flickering if needed */}
-            <div className="bg-[#262624] border border-[#3a3a38] rounded-lg p-3 shadow-xl max-w-[320px] animate-in fade-in zoom-in-95 duration-150">
-                <h4 className="text-[#faf9f5] text-sm font-medium mb-1">{title}</h4>
-                <p className="text-[#7a7974] text-xs leading-relaxed">{description}</p>
+            <div className="bg-[#1f1f1d] border border-[#3a3a38] rounded-lg p-3.5 shadow-2xl max-w-[320px] animate-in fade-in zoom-in-95 duration-200 ease-in-out">
+                <h4 className="text-[#faf9f5] text-[13px] font-medium mb-1.5">{title}</h4>
+                <p className="text-[#7a7974] text-[12px] leading-normal">{description}</p>
             </div>
         </div>
     );

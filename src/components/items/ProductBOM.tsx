@@ -687,8 +687,8 @@ export function ProductBOM({
                 type="button"
                 onClick={() => setIntelTab('movements')}
                 className={`rounded-lg px-5 py-3 min-w-[140px] text-left transition-all ${intelTab === 'movements'
-                    ? 'bg-[#1a1a18] border-2 border-[#3a3a38]'
-                    : 'bg-[#1a1a18] border border-[#3a3a38] hover:border-[#4a4a47]'
+                  ? 'bg-[#1a1a18] border-2 border-[#3a3a38]'
+                  : 'bg-[#1a1a18] border border-[#3a3a38] hover:border-[#4a4a47]'
                   }`}
               >
                 <div className={`text-xs mb-1 ${intelTab === 'movements' ? 'text-[#d97757]' : 'text-[#7a7974]'}`}>In stock</div>
@@ -703,8 +703,8 @@ export function ProductBOM({
                 type="button"
                 onClick={() => setIntelTab('expected')}
                 className={`rounded-lg px-5 py-3 min-w-[120px] text-left transition-all ${intelTab === 'expected'
-                    ? 'bg-[#1a1a18] border-2 border-[#3a3a38]'
-                    : 'hover:bg-[#3a3a38]'
+                  ? 'bg-[#1a1a18] border-2 border-[#3a3a38]'
+                  : 'hover:bg-[#3a3a38]'
                   }`}
               >
                 <div className={`text-xs mb-1 ${intelTab === 'expected' ? 'text-[#d97757]' : 'text-[#7a7974]'}`}>Expected</div>
@@ -718,8 +718,8 @@ export function ProductBOM({
                 type="button"
                 onClick={() => setIntelTab('committed')}
                 className={`rounded-lg px-5 py-3 min-w-[120px] text-left transition-all ${intelTab === 'committed'
-                    ? 'bg-[#1a1a18] border-2 border-[#3a3a38]'
-                    : 'hover:bg-[#3a3a38]'
+                  ? 'bg-[#1a1a18] border-2 border-[#3a3a38]'
+                  : 'hover:bg-[#3a3a38]'
                   }`}
               >
                 <div className={`text-xs mb-1 ${intelTab === 'committed' ? 'text-[#d97757]' : 'text-[#7a7974]'}`}>Committed</div>
@@ -984,8 +984,8 @@ export function ProductBOM({
                           <td className="px-4 py-3 text-[#bebcb3]">{mo.productName}</td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${mo.status === 'IN_PROGRESS' ? 'bg-[#d97757]/20 text-[#d97757]' :
-                                mo.status === 'NOT_STARTED' ? 'bg-[#7a7974]/20 text-[#bebcb3]' :
-                                  'bg-[#3a3a38] text-[#bebcb3]'
+                              mo.status === 'NOT_STARTED' ? 'bg-[#7a7974]/20 text-[#bebcb3]' :
+                                'bg-[#3a3a38] text-[#bebcb3]'
                               }`}>
                               {mo.status.replace('_', ' ')}
                             </span>

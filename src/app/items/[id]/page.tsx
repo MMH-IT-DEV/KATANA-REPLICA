@@ -37,7 +37,10 @@ import {
     MoreHorizontal,
     GripVertical,
     Box,
-    Grid
+    Grid,
+    Cog,
+    FileText,
+    MapPin
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DeleteConfirmDialog } from '@/components/ui/DeleteConfirmDialog';
@@ -612,6 +615,7 @@ export default function ItemDetailPage() {
     const [availableResources, setAvailableResources] = useState<{ id: string; name: string; defaultCostPerHour: number }[]>([]);
     const [availableOperations, setAvailableOperations] = useState<string[]>([]);
     const [draggedOperationIndex, setDraggedOperationIndex] = useState<number | null>(null);
+    const [dragOverOperationIndex, setDragOverOperationIndex] = useState<number | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null); // operation ID to delete
     const [showItemDeleteConfirm, setShowItemDeleteConfirm] = useState(false);
     const [activeTimePicker, setActiveTimePicker] = useState<string | null>(null); // operation ID with open time picker
@@ -621,6 +625,7 @@ export default function ItemDetailPage() {
     const [activeResourcePicker, setActiveResourcePicker] = useState<string | null>(null); // operation ID with open resource picker
     const [resourceSearchQuery, setResourceSearchQuery] = useState('');
     const [resourceOptions, setResourceOptions] = useState<string[]>(DEFAULT_RESOURCE_OPTIONS); // Dynamic list of resources
+    const [activeTypePicker, setActiveTypePicker] = useState<string | null>(null); // operation ID with open type picker
     const [activeVariantPicker, setActiveVariantPicker] = useState<string | null>(null); // operation ID with open variant picker
     // Track which variants each operation applies to: { operationId: { allSelected: true, variantIds: [...] } }
     const [operationVariantSelections, setOperationVariantSelections] = useState<Record<string, { allSelected: boolean; variantIds: string[] }>>({});
@@ -964,6 +969,10 @@ export default function ItemDetailPage() {
     const [ingredientQuantity, setIngredientQuantity] = useState('');
     const [ingredientOpen, setIngredientOpen] = useState(false);
 
+    // Drag and Drop State for Ingredients
+    const [draggedIngredientIndex, setDraggedIngredientIndex] = useState<number | null>(null);
+    const [dragOverIngredientIndex, setDragOverIngredientIndex] = useState<number | null>(null);
+
     // Add Operation State
     const [isAddingOperation, setIsAddingOperation] = useState(false);
     const [newOpName, setNewOpName] = useState('');
@@ -1219,16 +1228,21 @@ export default function ItemDetailPage() {
     const handleOperationDragStart = (e: React.DragEvent, index: number) => {
         setDraggedOperationIndex(index);
         e.dataTransfer.effectAllowed = 'move';
+        const target = e.target as HTMLElement;
+        target.classList.add('opacity-50');
     };
 
-    const handleOperationDragOver = (e: React.DragEvent) => {
+    const handleOperationDragOver = (e: React.DragEvent, index: number) => {
         e.preventDefault();
+        setDragOverOperationIndex(index);
+        e.dataTransfer.dropEffect = 'move';
     };
 
     const handleOperationDrop = async (e: React.DragEvent, dropIndex: number) => {
         e.preventDefault();
         if (draggedOperationIndex === null || draggedOperationIndex === dropIndex) {
             setDraggedOperationIndex(null);
+            setDragOverOperationIndex(null);
             return;
         }
 
@@ -1247,6 +1261,14 @@ export default function ItemDetailPage() {
         })));
 
         setDraggedOperationIndex(null);
+        setDragOverOperationIndex(null);
+    };
+
+    const handleOperationDragEnd = (e: React.DragEvent) => {
+        const target = e.target as HTMLElement;
+        target.classList.remove('opacity-50');
+        setDraggedOperationIndex(null);
+        setDragOverOperationIndex(null);
     };
 
     // Calculate operation cost
@@ -1475,6 +1497,39 @@ export default function ItemDetailPage() {
                 i.variantId === ing.variantId ? { ...i, notes: newNotes } : i
             ));
         }
+    };
+
+    // Drag and Drop Handlers for Ingredients
+    const handleIngredientDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedIngredientIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        const target = e.target as HTMLElement;
+        target.classList.add('opacity-50');
+    };
+
+    const handleIngredientDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        setDragOverIngredientIndex(index);
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleIngredientDrop = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        if (draggedIngredientIndex === null || draggedIngredientIndex === index) return;
+
+        const newIngredients = [...filteredRecipeItems];
+        const [movedItem] = newIngredients.splice(draggedIngredientIndex, 1);
+        newIngredients.splice(index, 0, movedItem);
+
+        setRecipeItems(newIngredients);
+        setDraggedIngredientIndex(null);
+    };
+
+    const handleIngredientDragEnd = (e: React.DragEvent) => {
+        const target = e.target as HTMLElement;
+        target.classList.remove('opacity-50');
+        setDraggedIngredientIndex(null);
+        setDragOverIngredientIndex(null);
     };
 
     // Load Inventory Intel for an ingredient
@@ -2007,10 +2062,17 @@ export default function ItemDetailPage() {
         (bom.productName || bom.variantName || '').toLowerCase().includes(filterBomProduct.toLowerCase())
     );
 
+    const itemDetailSidebarGroups = [
+        {
+            title: "DATA",
+            items: [
+                { name: "Items", id: "Inventory" }
+            ]
+        }
+    ];
 
-
-    if (loading) return <Shell activeTab="Items" activePage="Inventory"><div className="p-8 text-muted-foreground">Loading item...</div></Shell>;
-    if (!item) return <Shell activeTab="Items" activePage="Inventory"><div className="p-8 text-muted-foreground">Item not found</div></Shell>;
+    if (loading) return <Shell activeTab="Items" activePage="Inventory" sidebarGroups={itemDetailSidebarGroups}><div className="p-8 text-muted-foreground">Loading item...</div></Shell>;
+    if (!item) return <Shell activeTab="Items" activePage="Inventory" sidebarGroups={itemDetailSidebarGroups}><div className="p-8 text-muted-foreground">Item not found</div></Shell>;
 
     const getActiveVariantName = () => {
         const v = item.variants.find(v => v.id === activeVariantId);
@@ -2037,9 +2099,8 @@ export default function ItemDetailPage() {
     // Materials are typically ingredients, products can be semi-finished goods used in other products
     tabs.push('Used in BOMs');
 
-
     return (
-        <Shell activeTab="Items" activePage="Inventory">
+        <Shell activeTab="Items" activePage="Inventory" sidebarGroups={itemDetailSidebarGroups}>
             <div
                 className="h-full overflow-y-auto bg-background font-sans text-[13px] text-foreground pb-20 flex flex-col no-scrollbar"
             >
@@ -2101,23 +2162,37 @@ export default function ItemDetailPage() {
                                         <MoreVertical size={18} />
                                     </button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-40">
-                                    <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
-                                        <Trash2 className="mr-2 h-4 w-4" /> Delete item
+                                <DropdownMenuContent align="end" className="bg-[#1f1f1d] border-[#3a3a38] text-[#faf9f5] min-w-[140px]">
+                                    <DropdownMenuItem
+                                        className="text-xs hover:bg-secondary/50 cursor-pointer flex items-center gap-2"
+                                        onClick={() => {
+                                            // TODO: Implement archive functionality
+                                            console.log('Archive item:', item?.id);
+                                        }}
+                                    >
+                                        <Archive size={12} /> Archive
                                     </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={async () => {
-                                        if (!item) return;
-                                        setSaveStatus('saving');
-                                        const newId = await duplicateKatanaItem(item.id);
-                                        if (newId) {
-                                            router.push(`/items/${newId}?type=${item.type === 'product' ? 'Product' : 'Material'}`);
-                                        } else {
-                                            alert("Failed to duplicate item.");
-                                            setSaveStatus('saved');
-                                        }
-                                    }}>
-                                        <Copy className="mr-2 h-4 w-4" /> Duplicate item
+                                    <DropdownMenuItem
+                                        className="text-xs hover:bg-secondary/50 cursor-pointer flex items-center gap-2"
+                                        onClick={async () => {
+                                            if (!item) return;
+                                            setSaveStatus('saving');
+                                            const newId = await duplicateKatanaItem(item.id);
+                                            if (newId) {
+                                                router.push(`/items/${newId}?type=${item.type === 'product' ? 'Product' : 'Material'}`);
+                                            } else {
+                                                alert("Failed to duplicate item.");
+                                                setSaveStatus('saved');
+                                            }
+                                        }}
+                                    >
+                                        <Copy size={12} /> Duplicate
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="text-xs text-[#ff7b6f] focus:text-[#ff7b6f] focus:bg-[#ff7b6f]/30 cursor-pointer flex items-center gap-2"
+                                        onClick={handleDelete}
+                                    >
+                                        <Trash2 size={12} className="text-[#ff7b6f]" /> Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -2392,64 +2467,64 @@ export default function ItemDetailPage() {
                                 >
                                     <table className="w-full text-left border-collapse min-w-[1200px]">
                                         <thead>
-                                            <tr className="border-b border-[#3a3a38] bg-secondary/10 text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
-                                                <th className="p-4 w-[40px] text-center font-medium whitespace-nowrap border-r border-[#3a3a38]/50">
-                                                    <Checkbox
-                                                        checked={item.variants.length > 0 && selectedVariants.length === item.variants.length}
-                                                        onCheckedChange={(c) => handleSelectAll(c as boolean)}
-                                                        className="data-[state=checked]:bg-[#d97757] data-[state=checked]:border-[#d97757] data-[state=checked]:text-white"
-                                                    />
-                                                </th>
+                                            <tr className="h-8 bg-[#222220] border-b border-[#3a3a38]/50">
                                                 {/* Dynamic Headers based on Config */}
                                                 {visibleColumns.variant && (
                                                     variantConfigs.length > 0 ? (
                                                         variantConfigs.map((c, i) => (
-                                                            <th key={i} className="px-3 py-4 text-left font-medium min-w-[150px] whitespace-nowrap border-r border-border/50">{c.name}</th>
+                                                            <th key={i} className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 min-w-[150px] whitespace-nowrap">
+                                                                <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">{c.name}</span>
+                                                            </th>
                                                         ))
                                                     ) : (
-                                                        <th className="px-3 py-4 text-left font-medium min-w-[150px] whitespace-nowrap border-r border-border/50">Variant</th>
+                                                        <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 min-w-[120px] whitespace-nowrap">
+                                                            <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">Type</span>
+                                                        </th>
                                                     )
                                                 )}
-                                                {visibleColumns.sku && <th className="px-3 py-4 text-left font-medium min-w-[150px] whitespace-nowrap border-r border-border/50">SKU</th>}
-                                                {usability.sell && visibleColumns.salesPrice && <th className="px-3 py-4 text-left font-medium min-w-[120px] whitespace-nowrap border-r border-border/50">Default sales price</th>}
-                                                {visibleColumns.registeredBarcode && <th className="px-3 py-4 text-left font-medium min-w-[140px] whitespace-nowrap border-r border-border/50">Registered Barcode</th>}
-                                                {visibleColumns.internalBarcode && <th className="px-3 py-4 text-left font-medium min-w-[140px] whitespace-nowrap border-r border-border/50">Internal Barcode</th>}
+                                                {visibleColumns.sku && (
+                                                    <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 w-[180px]">
+                                                        <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">SKU</span>
+                                                    </th>
+                                                )}
+                                                {usability.sell && visibleColumns.salesPrice && (
+                                                    <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 w-[180px]">
+                                                        <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">Default sales price</span>
+                                                    </th>
+                                                )}
+                                                {visibleColumns.registeredBarcode && <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 w-[180px] whitespace-nowrap"><span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">Registered Barcode</span></th>}
+                                                {visibleColumns.internalBarcode && <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 w-[180px] whitespace-nowrap"><span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">Internal Barcode</span></th>}
                                                 {usability.make && visibleColumns.ingredientsCost && (
-                                                    <th className="px-3 py-4 text-left font-medium min-w-[120px] whitespace-nowrap border-r border-border/50">
-                                                        <div className="flex items-center justify-start gap-1">
-                                                            Ingredients cost <Info size={12} className="text-muted-foreground" />
-                                                        </div>
+                                                    <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 w-[150px] whitespace-nowrap">
+                                                        <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">Ingredients cost</span>
                                                     </th>
                                                 )}
                                                 {usability.make && visibleColumns.operationsCost && (
-                                                    <th className="px-3 py-4 text-left font-medium min-w-[120px] whitespace-nowrap border-r border-border/50">
-                                                        <div className="flex items-center justify-start gap-1">
-                                                            Operations cost <Info size={12} className="text-muted-foreground" />
-                                                        </div>
+                                                    <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 w-[150px] whitespace-nowrap">
+                                                        <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">Operations cost</span>
                                                     </th>
                                                 )}
-                                                {usability.buy && visibleColumns.purchasePrice && <th className="px-3 py-4 text-left font-medium min-w-[120px] whitespace-nowrap border-r border-border/50">Purchase Price</th>}
+                                                {usability.buy && visibleColumns.purchasePrice && (
+                                                    <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 w-[150px]">
+                                                        <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">Purchase Price</span>
+                                                    </th>
+                                                )}
                                                 {visibleColumns.inStock && (
-                                                    <th className="px-3 py-4 text-left font-medium w-[80px] whitespace-nowrap border-r border-border/50">
-                                                        <div className="flex items-center justify-start gap-1">
-                                                            In Stock <Info size={12} className="text-muted-foreground" />
-                                                        </div>
+                                                    <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 w-[120px]">
+                                                        <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">In Stock</span>
                                                     </th>
                                                 )}
                                                 {visibleColumns.bin && (
-                                                    <th className="px-3 py-4 text-left w-[80px] font-medium whitespace-nowrap border-r border-border/50">
-                                                        <div className="flex items-center justify-start gap-1">
-                                                            Bin <Info size={12} className="text-muted-foreground" />
-                                                        </div>
+                                                    <th className="px-3 py-0 align-middle border-r border-[#3a3a38]/50 w-[150px]">
+                                                        <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">Bin</span>
                                                     </th>
                                                 )}
-                                                <th className="p-4 w-32 font-medium whitespace-nowrap text-center"></th>
+                                                <th className="px-3 py-0 w-20 text-center bg-[#222220]"></th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-border text-sm">
+                                        <tbody className="divide-y divide-[#3a3a38] text-[13px]">
                                             {item.variants.map(v => (
-                                                <tr key={v.id} className="hover:bg-secondary/20 transition-colors group">
-                                                    <td className="p-4 text-center border-r border-border/50"><Checkbox className="data-[state=checked]:bg-[#a5d6ff] data-[state=checked]:border-[#a5d6ff] data-[state=checked]:text-black dark:data-[state=checked]:bg-[#a5d6ff] dark:data-[state=checked]:border-[#a5d6ff] dark:data-[state=checked]:text-black border-[#3a3a38]" /></td>
+                                                <tr key={v.id} className="h-10 hover:bg-secondary/20 transition-colors group">
 
                                                     {/* Dynamic Cells */}
                                                     {visibleColumns.variant && (
@@ -2462,10 +2537,10 @@ export default function ItemDetailPage() {
                                                                 if (i === 2) val = v.option3Value || '';
 
                                                                 return (
-                                                                    <td key={i} className="pl-3 pr-6 py-1 text-left border-r border-border/50">
-                                                                        <div className="flex items-center gap-1">
+                                                                    <td key={i} className="px-3 py-1 text-left border-r border-[#3a3a38]/50 relative whitespace-nowrap">
+                                                                        <div className="flex items-center justify-between">
                                                                             <CreatableCombobox
-                                                                                className="h-7 w-full text-xs font-medium bg-transparent border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary focus:bg-background rounded-sm px-2 focus-visible:shadow-none"
+                                                                                className="h-7 flex-1 text-xs font-medium bg-transparent border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary focus:bg-background rounded-sm px-2 focus-visible:shadow-none"
                                                                                 value={val}
                                                                                 options={c.values ? c.values.split(',').map(opt => ({ label: opt.trim(), value: opt.trim() })) : []}
                                                                                 onChange={(newValue) => handleUpdateVariantOption(v.id, i, newValue)}
@@ -2485,7 +2560,7 @@ export default function ItemDetailPage() {
                                                                             />
                                                                             <ExternalLink
                                                                                 size={12}
-                                                                                className="text-muted-foreground/50 shrink-0 cursor-pointer hover:text-primary"
+                                                                                className="text-white/70 shrink-0 cursor-pointer hover:text-white ml-2"
                                                                                 onClick={() => {
                                                                                     setActiveVariantId(v.id);
                                                                                     if (usability.make) {
@@ -2498,20 +2573,10 @@ export default function ItemDetailPage() {
                                                                 );
                                                             })
                                                         ) : (
-                                                            <td className="pl-3 pr-6 py-1 text-left border-r border-border/50">
-                                                                <div className="flex items-center gap-1">
-                                                                    <span className="uppercase font-medium text-foreground text-xs px-2 py-0.5 rounded">{v.attributes || 'DEFAULT'}</span>
-                                                                    <ExternalLink
-                                                                        size={12}
-                                                                        className="text-muted-foreground/50 shrink-0 cursor-pointer hover:text-primary"
-                                                                        onClick={() => {
-                                                                            setActiveVariantId(v.id);
-                                                                            if (usability.make) {
-                                                                                setActiveTab('Product recipe / BOM');
-                                                                            }
-                                                                        }}
-                                                                    />
-                                                                </div>
+                                                            <td className="px-3 py-1 border-r border-[#3a3a38]/50">
+                                                                <span className="inline-block bg-[#3a3a38] px-2 py-0.5 rounded text-xs text-foreground">
+                                                                    {v.attributes || 'DEFAULT'}
+                                                                </span>
                                                             </td>
                                                         )
                                                     )}
@@ -2547,29 +2612,25 @@ export default function ItemDetailPage() {
                                                         </td>
                                                     )}
                                                     {usability.sell && visibleColumns.salesPrice && (
-                                                        <td className="px-3 py-1 hover:bg-muted/50 cursor-pointer transition-colors relative group/cell border-r border-border/50 text-left">
-                                                            <div className="flex items-center justify-start gap-0.5 w-full">
+                                                        <td className="px-3 py-1 hover:bg-muted/50 cursor-pointer transition-colors relative group/cell border-r border-[#3a3a38]/50 text-right">
+                                                            <div className="flex items-center justify-end gap-1">
                                                                 <Input
-                                                                    type="text"
-                                                                    inputMode="decimal"
-                                                                    className="h-7 w-full text-xs font-medium bg-transparent border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary focus:bg-background rounded-sm px-1 shadow-none focus-visible:shadow-none"
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    className="h-7 w-24 text-xs text-foreground bg-transparent border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary focus:bg-background rounded-sm px-2 shadow-none focus-visible:shadow-none text-right"
                                                                     value={v.salesPrice === 0 ? '' : v.salesPrice}
-                                                                    placeholder="0"
+                                                                    placeholder="0.00"
                                                                     onChange={(e) => {
-                                                                        const rawValue = e.target.value;
-                                                                        // Allow empty or valid number input
-                                                                        if (rawValue === '' || /^[0-9]*\.?[0-9]*$/.test(rawValue)) {
-                                                                            const val = rawValue === '' ? 0 : parseFloat(rawValue) || 0;
-                                                                            setSaveStatus('saving');
-                                                                            updateVariantOptimistically(v.id, 'salesPrice', val);
-                                                                            debouncedVariantUpdate(v.id, 'salesPrice', val);
-                                                                        }
+                                                                        const val = parseFloat(e.target.value) || 0;
+                                                                        setSaveStatus('saving');
+                                                                        updateVariantOptimistically(v.id, 'salesPrice', val);
+                                                                        debouncedVariantUpdate(v.id, 'salesPrice', val);
                                                                     }}
                                                                     onBlur={() => {
                                                                         debouncedVariantUpdate.flush();
                                                                     }}
                                                                 />
-                                                                <span className="text-[10px] text-muted-foreground">CAD</span>
+                                                                <span className="text-[11px] text-[#bebcb3]">CAD</span>
                                                             </div>
                                                         </td>
                                                     )}
@@ -2647,27 +2708,26 @@ export default function ItemDetailPage() {
                                                         <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <button className="p-1.5 rounded hover:bg-secondary/50 text-muted-foreground hover:text-primary transition-colors">
-                                                                        <MoreHorizontal size={16} />
+                                                                    <button className="text-[#7a7974] hover:text-[#faf9f5] p-1.5 hover:bg-white/10 rounded transition-all">
+                                                                        <MoreHorizontal size={14} />
                                                                     </button>
                                                                 </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-48">
-                                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openBinModal(v); }}>
-                                                                        <Package className="mr-2 h-4 w-4" /> Default storage bin
+                                                                <DropdownMenuContent align="end" className="bg-[#1f1f1d] border-[#3a3a38] text-[#faf9f5] min-w-[140px]">
+                                                                    <DropdownMenuItem className="text-xs hover:bg-secondary/50 cursor-pointer flex items-center" onClick={(e) => { e.stopPropagation(); openBinModal(v); }}>
+                                                                        <MapPin className="w-4 h-4 mr-2" /> Default storage bin
                                                                     </DropdownMenuItem>
                                                                     {usability.make && (
-                                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openMakeModal(v); }}>
-                                                                            <Factory className="mr-2 h-4 w-4" /> Create manufacturing order
+                                                                        <DropdownMenuItem className="text-xs hover:bg-secondary/50 cursor-pointer flex items-center" onClick={(e) => { e.stopPropagation(); openMakeModal(v); }}>
+                                                                            <Factory className="w-4 h-4 mr-2" /> Create manufacturing order
                                                                         </DropdownMenuItem>
                                                                     )}
                                                                     {usability.sell && (
-                                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openSellModal(v); }}>
-                                                                            <ShoppingCart className="mr-2 h-4 w-4" /> Create sales order
+                                                                        <DropdownMenuItem className="text-xs hover:bg-secondary/50 cursor-pointer flex items-center" onClick={(e) => { e.stopPropagation(); openSellModal(v); }}>
+                                                                            <ShoppingCart className="w-4 h-4 mr-2" /> Create sales order
                                                                         </DropdownMenuItem>
                                                                     )}
-                                                                    <DropdownMenuSeparator />
-                                                                    <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={(e) => { e.stopPropagation(); openDeleteModal(v); }}>
-                                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete variant
+                                                                    <DropdownMenuItem className="text-xs text-[#ff7b6f] focus:text-[#ff7b6f] focus:bg-[#ff7b6f]/30 cursor-pointer flex items-center" onClick={(e) => { e.stopPropagation(); openDeleteModal(v); }}>
+                                                                        <Trash2 className="w-4 h-4 mr-2 text-[#ff7b6f]" /> Delete variant
                                                                     </DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
@@ -2694,58 +2754,41 @@ export default function ItemDetailPage() {
                                 {contextMenu && (
                                     <div
                                         style={{ top: contextMenu.y, left: contextMenu.x }}
-                                        className="fixed z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[180px] w-auto animate-in fade-in-0 zoom-in-95"
+                                        className="fixed z-50 bg-[#1f1f1d] border border-[#3a3a38] rounded-md shadow-lg py-2 min-w-[220px] w-auto animate-in fade-in-0 zoom-in-95"
                                         onClick={(e) => e.stopPropagation()}
                                     >
-                                        <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide border-b border-border/50 mb-1">
-                                            Columns
-                                        </div>
-                                        {[
-                                            { key: 'variant', label: 'Variant' },
-                                            { key: 'sku', label: 'SKU' },
-                                            { key: 'salesPrice', label: 'Default sales price' },
-                                            { key: 'registeredBarcode', label: 'Registered Barcode' },
-                                            { key: 'internalBarcode', label: 'Internal Barcode' },
-                                            { key: 'ingredientsCost', label: 'Ingredients Cost' },
-                                            { key: 'operationsCost', label: 'Operations Cost' },
-                                            { key: 'purchasePrice', label: 'Purchase Price' },
-                                            { key: 'inStock', label: 'In Stock' },
-                                            { key: 'bin', label: 'Bin' },
-                                        ].map(col => (
-                                            <div
-                                                key={col.key}
-                                                className="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-accent/50 transition-colors text-sm text-foreground rounded mx-1"
-                                                onClick={() => {
-                                                    setVisibleColumns(prev => ({ ...prev, [col.key]: !prev[col.key] }));
-                                                }}
-                                            >
-                                                <Checkbox
-                                                    checked={visibleColumns[col.key]}
-                                                    className="data-[state=checked]:bg-[#d97757] data-[state=checked]:border-[#d97757] data-[state=checked]:text-white w-3.5 h-3.5 rounded-[3px]"
-                                                />
-                                                <span className="truncate">{col.label}</span>
+                                        <div className="px-3 py-2">
+                                            <div className="text-xs font-semibold text-[#7a7974] uppercase tracking-wider mb-3">
+                                                Columns
                                             </div>
-                                        ))}
-                                        <div className="border-t border-border/50 mt-1 pt-1 mx-1">
-                                            <button
-                                                className="w-full text-left px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent/50 rounded transition-colors"
-                                                onClick={() => {
-                                                    setVisibleColumns({
-                                                        variant: true,
-                                                        sku: true,
-                                                        salesPrice: true,
-                                                        registeredBarcode: true,
-                                                        internalBarcode: true,
-                                                        ingredientsCost: true,
-                                                        operationsCost: true,
-                                                        purchasePrice: true,
-                                                        inStock: true,
-                                                        bin: true,
-                                                    });
-                                                }}
-                                            >
-                                                Reset to defaults
-                                            </button>
+                                            <div className="space-y-0.5">
+                                                {[
+                                                    { key: 'variant', label: 'Variant' },
+                                                    { key: 'sku', label: 'SKU' },
+                                                    { key: 'salesPrice', label: 'Default sales price' },
+                                                    { key: 'registeredBarcode', label: 'Registered Barcode' },
+                                                    { key: 'internalBarcode', label: 'Internal Barcode' },
+                                                    { key: 'ingredientsCost', label: 'Ingredients Cost' },
+                                                    { key: 'operationsCost', label: 'Operations Cost' },
+                                                    { key: 'purchasePrice', label: 'Purchase Price' },
+                                                    { key: 'inStock', label: 'In Stock' },
+                                                    { key: 'bin', label: 'Bin' },
+                                                ].map(col => (
+                                                    <div
+                                                        key={col.key}
+                                                        className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-white/[0.05] transition-colors text-sm text-[#faf9f5] rounded"
+                                                        onClick={() => {
+                                                            setVisibleColumns(prev => ({ ...prev, [col.key]: !prev[col.key] }));
+                                                        }}
+                                                    >
+                                                        <Checkbox
+                                                            checked={visibleColumns[col.key]}
+                                                            className="data-[state=checked]:bg-[#5b9bd5] data-[state=checked]:border-[#5b9bd5] data-[state=checked]:text-white border-[#3a3a38] w-3.5 h-3.5 rounded-[3px]"
+                                                        />
+                                                        <span className="text-[13px]">{col.label}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -2753,102 +2796,70 @@ export default function ItemDetailPage() {
 
                             {/* Variant Configuration Modal */}
                             <Dialog open={isVariantConfigOpen} onOpenChange={setIsVariantConfigOpen}>
-                                <DialogContent className="bg-[#262624] text-[#faf9f5] rounded-lg p-6 w-[500px] shadow-xl max-w-none gap-0 border-0">
-                                    <DialogHeader className="mb-6 space-y-0">
-                                        <DialogTitle className="text-lg font-semibold text-[#faf9f5]">Product variant configuration</DialogTitle>
+                                <DialogContent
+                                    className="bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5] max-w-md p-0 overflow-hidden"
+                                    onOpenAutoFocus={(e) => e.preventDefault()}
+                                >
+                                    <DialogHeader className="px-5 pt-5 pb-2">
+                                        <DialogTitle className="text-lg font-medium">Product variant configuration</DialogTitle>
                                     </DialogHeader>
 
-                                    <div className="space-y-0">
-                                        {/* Copy Config Link */}
-                                        <div className="flex justify-end mb-4">
-                                            {!isCopyingConfig ? (
-                                                <button
-                                                    onClick={() => setIsCopyingConfig(true)}
-                                                    className="text-[#d97757] text-sm flex items-center gap-1 hover:underline"
-                                                >
-                                                    <span className="text-lg leading-none">⇄</span> Copy variant config from
-                                                </button>
-                                            ) : (
-                                                <div className="w-full flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-200">
-                                                    <div className="relative w-full">
-                                                        <Search size={14} className="absolute left-2.5 top-2.5 text-[#bebcb3]" />
-                                                        <Input
-                                                            autoFocus
-                                                            placeholder="Search..."
-                                                            className="h-9 text-sm pl-8 w-full bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5] focus-visible:ring-[#d97757]"
-                                                        />
-                                                        <button
-                                                            onClick={() => setIsCopyingConfig(false)}
-                                                            className="absolute right-2 top-2.5 text-[#bebcb3] hover:text-[#faf9f5]"
-                                                        >
-                                                            <X size={14} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Headers */}
-                                        <div className="flex gap-4 mb-2 text-sm text-[#bebcb3] px-1">
-                                            <div className="w-24">Variant option</div>
-                                            <div className="flex-1">Option values, separated by commas</div>
-                                            <div className="w-5"></div>
-                                        </div>
-
-                                        {/* Rows */}
-                                        <div className="space-y-3">
-                                            {draftVariantConfigs.map((config, index) => (
-                                                <div key={index} className="flex items-start gap-4 group">
-                                                    <Input
-                                                        value={config.name}
-                                                        onChange={e => handleUpdateVariantConfig(index, 'name', e.target.value)}
-                                                        className="w-24 text-sm font-medium bg-[#1a1a18] px-2 h-9 border-[#3a3a38] focus-visible:ring-1 focus-visible:ring-[#d97757] focus-visible:border-[#d97757] rounded shadow-none text-[#faf9f5]"
+                                    <div className="px-5 pt-1 pb-4 space-y-3">
+                                        {/* Variant Options */}
+                                        {draftVariantConfigs.map((config, index) => (
+                                            <div key={index} className="flex items-start gap-3 group">
+                                                <Input
+                                                    value={config.name}
+                                                    onChange={e => handleUpdateVariantConfig(index, 'name', e.target.value)}
+                                                    className="w-24 bg-[#1a1a18] border border-[#3a3a38] h-8 text-sm px-3 focus-visible:ring-0 focus-visible:border-[#d97757] focus-visible:bg-[#2a2a28]"
+                                                    placeholder="TYPE"
+                                                />
+                                                <div className="flex-1">
+                                                    <TagInput
+                                                        value={config.values}
+                                                        onChange={(e) => handleUpdateVariantConfig(index, 'values', e.target.value)}
                                                         placeholder=""
                                                     />
-                                                    <div className="flex-1">
-                                                        <TagInput
-                                                            value={config.values}
-                                                            onChange={(e) => handleUpdateVariantConfig(index, 'values', e.target.value)}
-                                                            placeholder=""
-                                                        />
-                                                    </div>
-                                                    <button
-                                                        className="text-[#bebcb3] hover:text-[#faf9f5] mt-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        onClick={() => handleRemoveVariantConfig(index)}
-                                                        disabled={draftVariantConfigs.length === 1}
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
                                                 </div>
-                                            ))}
-                                        </div>
+                                                <button
+                                                    className="text-[#ff7b6f] opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-[#ff7b6f]/10 rounded"
+                                                    onClick={() => handleRemoveVariantConfig(index)}
+                                                    disabled={draftVariantConfigs.length === 1}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
 
                                         {/* Add Button */}
                                         {draftVariantConfigs.length < 3 && (
                                             <button
-                                                className="text-[#d97757] mt-4 flex items-center gap-1 text-sm font-medium hover:underline"
+                                                className="text-[#7a7974] hover:text-[#d97757] hover:bg-white/[0.03] h-8 px-2 text-xs font-medium flex items-center gap-1.5 transition-all rounded"
                                                 onClick={handleAddVariantConfig}
                                             >
-                                                <span className="text-lg leading-none">+</span> Add option
+                                                <Plus size={14} /> Add option
                                             </button>
                                         )}
                                     </div>
 
                                     {/* Footer */}
-                                    <div className="flex justify-end gap-4 mt-8 pt-4 border-t border-[#3a3a38]">
-                                        <button
-                                            onClick={() => setIsVariantConfigOpen(false)}
-                                            className="text-[#bebcb3] text-sm font-medium hover:text-[#faf9f5]"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            onClick={handleGenerateVariants}
-                                            disabled={isUpdatingConfig}
-                                            className="bg-[#d97757] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#d97757]/90 shadow-sm disabled:opacity-50"
-                                        >
-                                            {isUpdatingConfig ? 'Saving...' : 'Update configuration'}
-                                        </button>
+                                    <div className="flex items-center justify-end px-5 py-4 bg-[#1a1a18]">
+                                        <div className="flex gap-3">
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => setIsVariantConfigOpen(false)}
+                                                className="h-8 px-4 text-sm font-medium border border-[#3a3a38] hover:bg-white/[0.05] text-[#faf9f5]"
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button
+                                                onClick={handleGenerateVariants}
+                                                disabled={isUpdatingConfig}
+                                                className="h-8 px-5 bg-[#d97757] hover:bg-[#c66b4d] text-white text-sm font-medium shadow-sm disabled:opacity-50"
+                                            >
+                                                {isUpdatingConfig ? 'Saving...' : 'Update'}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </DialogContent>
                             </Dialog>
@@ -3073,38 +3084,51 @@ export default function ItemDetailPage() {
 
                             {/* === DELETE CONFIRMATION MODAL === */}
                             <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                                <DialogContent className="max-w-md bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-base font-medium text-[#faf9f5]">Delete variant</DialogTitle>
+                                <DialogContent className="bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5] max-w-md p-0 overflow-hidden shadow-2xl">
+                                    <DialogHeader className="px-5 pt-5 pb-2">
+                                        <DialogTitle className="text-lg font-semibold tracking-tight">
+                                            Delete the &quot;{deleteModalVariant?.sku}&quot; variant
+                                        </DialogTitle>
                                     </DialogHeader>
-                                    <div className="py-4 font-normal">
-                                        <p className="text-sm text-muted-foreground">
-                                            Are you sure you want to delete variant <span className="font-medium text-[#faf9f5]">[{deleteModalVariant?.sku}]</span>?
+                                    <div className="px-5 pt-1 pb-4 space-y-3">
+                                        <p className="text-[13px] text-[#faf9f5] leading-relaxed">
+                                            Are you sure you want to delete this variant?
                                         </p>
-                                        <p className="text-sm text-[#ff7b6f] mt-2">
-                                            This action cannot be undone. All related recipes, operations, and inventory records will be removed.
+                                        <p className="text-[13px] text-[#faf9f5] leading-relaxed">
+                                            <strong className="font-bold">This action cannot be undone.</strong> All related recipes, operations, and inventory records will be removed.
                                         </p>
                                     </div>
-                                    <DialogFooter>
-                                        <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)} className="border-[#3a3a38] text-[#faf9f5] hover:bg-secondary/20">Cancel</Button>
-                                        <Button variant="destructive" onClick={handleDeleteVariant} className="bg-[#ff4d4d] hover:bg-[#ff3333] text-white border-none">Delete</Button>
-                                    </DialogFooter>
+                                    <div className="flex justify-end gap-3 px-5 py-4 bg-[#1a1a18]">
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => setIsDeleteModalOpen(false)}
+                                            className="h-8 px-4 text-sm font-medium border border-[#3a3a38] hover:bg-white/[0.05] text-[#faf9f5]"
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            onClick={handleDeleteVariant}
+                                            className="h-8 px-3 bg-[#d97371] hover:bg-[#d97371]/90 text-white text-sm font-medium shadow-sm transition-colors"
+                                        >
+                                            Delete
+                                        </Button>
+                                    </div>
                                 </DialogContent>
                             </Dialog>
 
                             {/* === USABILITY CONFIRMATION DIALOG === */}
                             <Dialog open={showUsabilityConfirm} onOpenChange={setShowUsabilityConfirm}>
-                                <DialogContent className="max-w-md bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5]">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-base font-medium text-[#faf9f5]">
+                                <DialogContent className="bg-[#1a1a18] border-[#3a3a38] text-[#faf9f5] max-w-md p-0 overflow-hidden shadow-2xl">
+                                    <DialogHeader className="px-5 pt-5 pb-2">
+                                        <DialogTitle className="text-lg font-semibold tracking-tight">
                                             {usabilityConfirmAction?.type === 'sell' && 'Disable selling'}
                                             {usabilityConfirmAction?.type === 'buy' && 'Disable buying'}
                                             {usabilityConfirmAction?.type === 'make' && 'Disable making'}
                                             {usabilityConfirmAction?.type === 'kit' && 'Disable kit/bundle'}
                                         </DialogTitle>
                                     </DialogHeader>
-                                    <div className="py-4 font-normal">
-                                        <p className="text-sm text-muted-foreground">
+                                    <div className="px-5 pt-1 pb-4 space-y-3">
+                                        <p className="text-[13px] text-[#faf9f5] leading-relaxed">
                                             {usabilityConfirmAction?.type === 'sell' && (
                                                 <>
                                                     This <span className="font-semibold text-[#faf9f5]">prevents the item from being added to any new sales orders</span>, but doesn&apos;t affect sales orders that already contain the item.
@@ -3122,24 +3146,23 @@ export default function ItemDetailPage() {
                                             )}
                                             {usabilityConfirmAction?.type === 'kit' && (
                                                 <>
-                                                    This will <span className="font-semibold text-[#faf9f5]">prevent this item from being a kit/bundle for new orders</span>, but doesn&apos;t affect any orders that already contain this item as a kit/bundle.
+                                                    This <span className="font-semibold text-[#faf9f5]">prevents this item from being a kit/bundle for new orders</span>, but doesn&apos;t affect any orders that already contain this item as a kit/bundle.
                                                 </>
                                             )}
                                         </p>
                                     </div>
-                                    <DialogFooter>
+                                    <div className="flex justify-end gap-3 px-5 py-4 bg-[#1a1a18]">
                                         <Button
-                                            variant="outline"
+                                            variant="ghost"
                                             onClick={() => {
                                                 setShowUsabilityConfirm(false);
                                                 setUsabilityConfirmAction(null);
                                             }}
-                                            className="border-[#3a3a38] text-[#faf9f5] hover:bg-secondary/20"
+                                            className="h-8 px-4 text-sm font-medium border border-[#3a3a38] hover:bg-white/[0.05] text-[#faf9f5]"
                                         >
                                             Cancel
                                         </Button>
                                         <Button
-                                            className="bg-[#d97757] hover:bg-[#c86747] text-white border-none"
                                             onClick={() => {
                                                 if (usabilityConfirmAction) {
                                                     setUsability({ ...usability, [usabilityConfirmAction.type]: false });
@@ -3147,10 +3170,11 @@ export default function ItemDetailPage() {
                                                 setShowUsabilityConfirm(false);
                                                 setUsabilityConfirmAction(null);
                                             }}
+                                            className="h-8 px-3 bg-[#d97371] hover:bg-[#d97371]/90 text-white text-sm font-medium shadow-sm transition-colors"
                                         >
                                             Disable
                                         </Button>
-                                    </DialogFooter>
+                                    </div>
                                 </DialogContent>
                             </Dialog>
 
@@ -3401,50 +3425,65 @@ export default function ItemDetailPage() {
                                 </div>
                             </div>
 
-                            {/* Ingredients Table */}
-                            <div className="bg-background rounded-lg border border-border overflow-hidden mt-4">
+                            {/* Ingredients Card */}
+                            <div className="bg-background rounded-lg border border-[#3a3a38]">
+                                {/* Ingredients Table */}
+                                <div className="overflow-hidden">
                                 <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
                                     <table className="w-full text-left border-collapse min-w-[900px]">
                                         <thead>
-                                            <tr className="border-b border-border bg-secondary/10 text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
-                                                <th className="p-4 w-[40px] text-center font-medium whitespace-nowrap border-r border-border/50">
-                                                    <Checkbox className="data-[state=checked]:bg-[#d97757] data-[state=checked]:border-[#d97757] data-[state=checked]:text-white" />
-                                                </th>
-                                                <th className="px-3 py-4 text-left font-medium min-w-[350px] whitespace-nowrap border-r border-border/50">Item</th>
-                                                <th className="px-3 py-4 text-right font-medium min-w-[120px] whitespace-nowrap border-r border-border/50">Quantity</th>
-                                                <th className="px-3 py-4 text-left font-medium min-w-[180px] whitespace-nowrap border-r border-border/50">Notes</th>
-                                                <th className="px-3 py-4 text-left font-medium min-w-[150px] whitespace-nowrap border-r border-border/50">Stock cost</th>
-                                                <th className="p-4 w-[60px] font-medium whitespace-nowrap text-center"></th>
+                                            <tr className="border-b border-[#3a3a38] bg-[#222220] text-[11px] text-[#7a7974] font-medium uppercase tracking-wider h-8">
+                                                <th className="p-2 w-[30px] text-center font-medium whitespace-nowrap border-r border-[#3a3a38]/50"></th>
+                                                <th className="px-3 py-0 text-left font-medium min-w-[350px] whitespace-nowrap border-r border-[#3a3a38]/50">Item</th>
+                                                <th className="px-3 py-0 text-right font-medium min-w-[120px] whitespace-nowrap border-r border-[#3a3a38]/50">Quantity</th>
+                                                <th className="px-3 py-0 text-left font-medium min-w-[180px] whitespace-nowrap border-r border-[#3a3a38]/50">Notes</th>
+                                                <th className="px-3 py-0 text-left font-medium min-w-[150px] whitespace-nowrap border-r border-[#3a3a38]/50">Stock cost</th>
+                                                <th className="p-2 w-[50px] font-medium whitespace-nowrap text-center"></th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-border text-sm">
+                                        <tbody className="divide-y divide-[#3a3a38] text-sm">
                                             {filteredRecipeItems.map((ing, idx) => (
-                                                <tr key={ing.variantId} className="hover:bg-secondary/20 transition-colors group">
-                                                    <td className="p-4 text-center border-r border-border/50">
-                                                        <Checkbox className="data-[state=checked]:bg-[#a5d6ff] data-[state=checked]:border-[#a5d6ff] data-[state=checked]:text-black border-[#3a3a38]" />
+                                                <tr
+                                                    key={ing.variantId}
+                                                    draggable
+                                                    onDragStart={(e) => handleIngredientDragStart(e, idx)}
+                                                    onDragOver={(e) => handleIngredientDragOver(e, idx)}
+                                                    onDrop={(e) => handleIngredientDrop(e, idx)}
+                                                    onDragEnd={handleIngredientDragEnd}
+                                                    className={cn(
+                                                        "h-8 hover:bg-secondary/20 transition-colors group cursor-default",
+                                                        draggedIngredientIndex === idx && "opacity-50",
+                                                        dragOverIngredientIndex === idx && draggedIngredientIndex !== idx && "border-t-2 border-t-[#d97757]"
+                                                    )}
+                                                >
+                                                    <td className="p-1 text-center border-r border-[#3a3a38]/50 cursor-grab active:cursor-grabbing">
+                                                        <div className="flex items-center justify-center">
+                                                            <GripVertical size={14} className="text-[#5a5a58] opacity-50 group-hover:opacity-100 transition-opacity" />
+                                                        </div>
                                                     </td>
-                                                    <td className="px-3 py-1 border-r border-border/50">
-                                                        <div className="flex items-center gap-2">
+                                                    <td className="px-2 py-0 border-r border-[#3a3a38]/50">
+                                                        <div className="flex items-center justify-between gap-2">
                                                             <span
-                                                                className="cursor-pointer hover:text-[#d97757] hover:underline font-medium"
+                                                                className="cursor-pointer text-[#faf9f5] font-medium"
                                                                 onClick={() => router.push(`/items/${ing.itemId}?type=Material`)}
                                                             >
                                                                 {ing.name}
                                                             </span>
                                                             <ExternalLink
                                                                 size={12}
-                                                                className="text-[#d97757] opacity-0 group-hover:opacity-100 cursor-pointer hover:text-[#d97757]"
+                                                                className="text-[#faf9f5] opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
                                                                 onClick={() => router.push(`/items/${ing.itemId}?type=Material`)}
                                                             />
                                                         </div>
                                                     </td>
-                                                    <td className="px-3 py-1 border-r border-border/50">
+                                                    <td className="px-2 py-0 border-r border-[#3a3a38]/50">
                                                         <div className="flex items-center justify-end gap-1">
                                                             <Input
                                                                 type="number"
                                                                 step="0.00001"
-                                                                className="h-7 w-20 text-xs text-right bg-transparent border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary focus:bg-background rounded-sm px-2 shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                className="h-6 w-16 text-xs text-right bg-transparent border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary focus:bg-background rounded-sm px-1 shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                                 defaultValue={ing.quantity}
+                                                                onFocus={(e) => e.target.select()}
                                                                 onBlur={(e) => {
                                                                     const newVal = parseFloat(e.target.value);
                                                                     if (!isNaN(newVal) && newVal !== ing.quantity) {
@@ -3457,13 +3496,13 @@ export default function ItemDetailPage() {
                                                                     }
                                                                 }}
                                                             />
-                                                            <span className="text-[11px] text-muted-foreground whitespace-nowrap">{ing.uom}</span>
+                                                            <span className="text-[11px] text-[#bebcb3] whitespace-nowrap">{ing.uom}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-3 py-1 border-r border-border/50">
+                                                    <td className="px-2 py-0 border-r border-[#3a3a38]/50">
                                                         <Input
                                                             type="text"
-                                                            className="h-7 w-full text-xs bg-transparent border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary focus:bg-background rounded-sm px-2 shadow-none text-muted-foreground italic placeholder:text-muted-foreground"
+                                                            className="h-6 w-full text-xs bg-transparent border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary focus:bg-background rounded-sm px-1 shadow-none text-muted-foreground italic placeholder:text-muted-foreground"
                                                             defaultValue={ing.notes || ''}
                                                             placeholder="Add notes..."
                                                             onBlur={(e) => {
@@ -3479,25 +3518,25 @@ export default function ItemDetailPage() {
                                                             }}
                                                         />
                                                     </td>
-                                                    <td className="px-3 py-1 border-r border-border/50">
+                                                    <td className="px-2 py-0 border-r border-[#3a3a38]/50">
                                                         <div className="flex items-center justify-end gap-1">
-                                                            <span className="text-foreground text-sm">
+                                                            <span className="text-foreground text-xs font-medium">
                                                                 {ing.cost.toFixed(5)}
                                                             </span>
-                                                            <span className="text-muted-foreground text-[11px]">CAD</span>
+                                                            <span className="text-[#bebcb3] text-[11px]">CAD</span>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => loadInventoryIntel(ing)}
-                                                                className="p-0.5 hover:bg-secondary rounded ml-1"
+                                                                className="p-0.5 hover:bg-secondary rounded"
                                                                 title="View inventory intel"
                                                             >
-                                                                <Info size={14} className="text-[#5b9bd5] hover:text-[#6baae6]" />
+                                                                <Info size={12} className="text-[#7a7974] hover:text-[#bebcb3]" />
                                                             </button>
                                                         </div>
                                                     </td>
-                                                    <td className="p-4 text-center">
-                                                        <button className="text-muted-foreground hover:text-red-600" onClick={() => handleDeleteIngredient(ing)}>
-                                                            <Trash2 size={14} />
+                                                    <td className="p-1 text-center">
+                                                        <button className="text-[#ff7b6f] opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-[#ff7b6f]/10 rounded" onClick={() => handleDeleteIngredient(ing)}>
+                                                            <Trash2 size={12} />
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -3505,8 +3544,10 @@ export default function ItemDetailPage() {
                                             {/* Empty Row for Adding New Ingredient */}
                                             {isAddingIngredient && (
                                                 <tr className="hover:bg-secondary/20 transition-colors">
-                                                    <td className="p-4 text-center border-r border-border/50">
-                                                        <Checkbox disabled className="opacity-50" />
+                                                    <td className="p-2 text-center border-r border-[#3a3a38]/50">
+                                                        <div className="flex items-center justify-center">
+                                                            <GripVertical size={14} className="text-[#5a5a58] opacity-30" />
+                                                        </div>
                                                     </td>
                                                     <td className="px-3 py-1 border-r border-border/50">
                                                         <CreatableCombobox
@@ -3574,10 +3615,10 @@ export default function ItemDetailPage() {
                                             )}
                                         </tbody>
                                         <tfoot>
-                                            <tr className="border-t border-border">
-                                                <td colSpan={6} className="px-3 py-3">
+                                            <tr className="border-t border-[#3a3a38] bg-[#262624]/30">
+                                                <td colSpan={4} className="p-2">
                                                     <button
-                                                        className="text-muted-foreground font-medium text-xs hover:text-primary hover:underline flex items-center gap-1 transition-colors"
+                                                        className="text-[#7a7974] hover:text-[#d97757] hover:bg-white/[0.03] h-8 px-2 text-xs font-medium flex items-center gap-1.5 transition-all rounded"
                                                         onClick={() => {
                                                             setIsAddingIngredient(true);
                                                             setIngredientOpen(true);
@@ -3586,17 +3627,23 @@ export default function ItemDetailPage() {
                                                             setIngredientQuantity('1');
                                                         }}
                                                     >
-                                                        + Add row
+                                                        <Plus size={14} /> Add row
                                                     </button>
                                                 </td>
-                                            </tr>
-                                            <tr className="border-t border-border bg-secondary/5">
-                                                <td colSpan={4} className="px-3 py-4 text-right text-sm font-medium">Total cost:</td>
-                                                <td className="px-3 py-4 text-sm font-medium">{filteredRecipeItems.reduce((acc, i) => acc + i.cost, 0).toFixed(2)} <span className="text-[11px] text-muted-foreground">CAD</span></td>
+                                                <td className="px-3 py-2">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-sm font-medium text-foreground">Total cost:</span>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-sm font-bold text-foreground">{filteredRecipeItems.reduce((acc, i) => acc + i.cost, 0).toFixed(2)}</span>
+                                                            <span className="text-[11px] text-[#bebcb3]">CAD</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
                                                 <td></td>
                                             </tr>
                                         </tfoot>
                                     </table>
+                                </div>
                                 </div>
                             </div>
 
@@ -3744,7 +3791,7 @@ export default function ItemDetailPage() {
                     )}
 
                     {activeTab === 'Production operations' && (
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             {/* Header Section */}
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-medium text-foreground">Operation steps</h3>
@@ -3771,38 +3818,38 @@ export default function ItemDetailPage() {
                             </div>
 
                             {/* Operations Table */}
-                            <div className="bg-background rounded-lg border border-border overflow-visible">
+                            <div className="bg-background rounded-lg border border-[#3a3a38] overflow-visible">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="border-b border-border bg-secondary/10 text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
-                                            <th className="p-3 w-10 border-r border-border/50"></th>
+                                        <tr className="border-b border-[#3a3a38] bg-[#222220] text-[11px] text-[#7a7974] font-medium uppercase tracking-wider h-8">
+                                            <th className="p-2 w-10 border-r border-[#3a3a38]/50"></th>
                                             {operationsInSequence && (
-                                                <th className="p-3 w-16 border-r border-border/50 text-center">
+                                                <th className="px-3 py-0 w-16 border-r border-[#3a3a38]/50 text-center">
                                                     Step
                                                 </th>
                                             )}
-                                            <th className="p-3 min-w-[200px] border-r border-border/50">
-                                                Operation <Info size={10} className="inline ml-1 text-white/70" />
+                                            <th className="px-3 py-0 min-w-[200px] border-r border-[#3a3a38]/50">
+                                                Operation
                                             </th>
-                                            <th className="p-3 w-28 border-r border-border/50">
-                                                Type <Info size={10} className="inline ml-1 text-white/70" />
+                                            <th className="px-3 py-0 w-28 border-r border-[#3a3a38]/50">
+                                                Type
                                             </th>
-                                            <th className="p-3 w-40 border-r border-border/50">
-                                                Resource <Info size={10} className="inline ml-1 text-white/70" />
+                                            <th className="px-3 py-0 w-40 border-r border-[#3a3a38]/50">
+                                                Resource
                                             </th>
-                                            <th className="p-3 text-right w-32 border-r border-border/50">
-                                                Cost para. <Info size={10} className="inline ml-1 text-white/70" />
+                                            <th className="px-3 py-0 text-right w-32 border-r border-[#3a3a38]/50">
+                                                Cost para.
                                             </th>
-                                            <th className="p-3 text-right w-24 border-r border-border/50">
-                                                Time <Info size={10} className="inline ml-1 text-white/70" />
+                                            <th className="px-3 py-0 text-right w-24 border-r border-[#3a3a38]/50">
+                                                Time
                                             </th>
-                                            <th className="p-3 w-32 border-r border-border/50">
+                                            <th className="px-3 py-0 w-32 border-r border-[#3a3a38]/50">
                                                 Product: TYPE
                                             </th>
-                                            <th className="p-3 text-right w-32 border-r border-border/50">
-                                                Cost <Info size={10} className="inline ml-1 text-white/70" />
+                                            <th className="px-3 py-0 text-right w-32 border-r border-[#3a3a38]/50">
+                                                Cost
                                             </th>
-                                            <th className="p-3 w-12"></th>
+                                            <th className="p-2 w-12"></th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border text-sm">
@@ -3816,20 +3863,27 @@ export default function ItemDetailPage() {
                                             productOperations.map((op, index) => (
                                                 <tr
                                                     key={op.id}
-                                                    className="hover:bg-secondary/20 transition-colors group"
+                                                    className={cn(
+                                                        "h-8 hover:bg-secondary/20 transition-colors group cursor-default",
+                                                        draggedOperationIndex === index && "opacity-50",
+                                                        dragOverOperationIndex === index && draggedOperationIndex !== index && "border-t-2 border-t-[#d97757]"
+                                                    )}
                                                     draggable
                                                     onDragStart={(e) => handleOperationDragStart(e, index)}
-                                                    onDragOver={handleOperationDragOver}
+                                                    onDragOver={(e) => handleOperationDragOver(e, index)}
                                                     onDrop={(e) => handleOperationDrop(e, index)}
+                                                    onDragEnd={handleOperationDragEnd}
                                                 >
                                                     {/* Drag Handle */}
-                                                    <td className="p-3 cursor-grab border-r border-border/50">
-                                                        <GripVertical className="w-4 h-4 text-muted-foreground/50 hover:text-foreground" />
+                                                    <td className="p-1 cursor-grab active:cursor-grabbing border-r border-r-[#3a3a38]/50">
+                                                        <div className="flex items-center justify-center">
+                                                            <GripVertical size={14} className="text-[#5a5a58] opacity-50 group-hover:opacity-100 transition-opacity mx-auto" />
+                                                        </div>
                                                     </td>
 
                                                     {/* Step - shown when operations are in sequence */}
                                                     {operationsInSequence && (
-                                                        <td className="p-3 border-r border-border/50 text-center text-sm text-muted-foreground">
+                                                        <td className="px-2 py-0 border-r border-border/50 text-center text-sm text-muted-foreground">
                                                             {index + 1}
                                                         </td>
                                                     )}
@@ -3846,72 +3900,24 @@ export default function ItemDetailPage() {
                                                             {activeOperationPicker === op.id && (
                                                                 <>
                                                                     <div className="fixed inset-0 z-[9998]" onClick={() => setActiveOperationPicker(null)} />
-                                                                    <div className="absolute left-0 top-full mt-1 bg-[#1f1f1d] border border-[#3a3a38] rounded-lg shadow-2xl z-[9999] w-[300px] max-h-[350px] flex flex-col">
-                                                                        {/* Header */}
-                                                                        <div className="px-3 py-2 text-xs text-gray-400 border-b border-[#3a3a38]">
-                                                                            Select operation
-                                                                        </div>
-                                                                        {/* Search Input */}
-                                                                        <div className="p-3 border-b border-[#3a3a38]">
-                                                                            <div className="flex items-center gap-2 px-3 py-2 bg-[#2a2a28] rounded border border-[#3a3a38] focus-within:border-[#d97757]">
-                                                                                <Search className="w-4 h-4 text-gray-500" />
-                                                                                <input
-                                                                                    type="text"
-                                                                                    value={operationSearchQuery}
-                                                                                    onChange={(e) => setOperationSearchQuery(e.target.value)}
-                                                                                    placeholder="Search operations..."
-                                                                                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-gray-500"
-                                                                                    autoFocus
-                                                                                />
-                                                                            </div>
-                                                                        </div>
+                                                                    <div className="absolute left-0 top-full mt-1 bg-[#1f1f1d] border border-[#3a3a38] rounded-md shadow-lg z-[9999] w-[300px] max-h-[350px] flex flex-col py-1 px-1">
                                                                         {/* Options List */}
-                                                                        <div className="flex-1 overflow-y-auto py-1">
-                                                                            {operationOptions
-                                                                                .filter(opName => opName.toLowerCase().includes(operationSearchQuery.toLowerCase()))
-                                                                                .map(opName => (
-                                                                                    <button
-                                                                                        key={opName}
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            handleUpdateItemOperation(op.id, 'operationName', opName);
-                                                                                            setActiveOperationPicker(null);
-                                                                                            setOperationSearchQuery('');
-                                                                                        }}
-                                                                                        className={`w-full px-4 py-1.5 text-left flex items-center gap-2 hover:bg-gray-700/50 transition ${opName === op.operationName ? 'bg-gray-700/30' : ''}`}
-                                                                                    >
-                                                                                        <span className="text-white text-sm">{opName}</span>
-                                                                                    </button>
-                                                                                ))
-                                                                            }
-                                                                            {operationOptions.filter(opName => opName.toLowerCase().includes(operationSearchQuery.toLowerCase())).length === 0 && !operationSearchQuery.trim() && (
-                                                                                <div className="px-4 py-3 text-gray-500 text-sm">
-                                                                                    No operations found
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                        {/* Create new operation option */}
-                                                                        {operationSearchQuery.trim() && operationOptions.filter(opName => opName.toLowerCase().includes(operationSearchQuery.toLowerCase())).length === 0 && (
-                                                                            <div className="border-t border-gray-700">
+                                                                        <div className="flex-1 overflow-y-auto scrollbar-hide">
+                                                                            {operationOptions.map(opName => (
                                                                                 <button
+                                                                                    key={opName}
                                                                                     type="button"
                                                                                     onClick={() => {
-                                                                                        const newOpName = operationSearchQuery.trim().toUpperCase();
-                                                                                        // Add to dropdown options
-                                                                                        setOperationOptions(prev => [...prev, newOpName]);
-                                                                                        handleUpdateItemOperation(op.id, 'operationName', newOpName);
+                                                                                        handleUpdateItemOperation(op.id, 'operationName', opName);
                                                                                         setActiveOperationPicker(null);
                                                                                         setOperationSearchQuery('');
                                                                                     }}
-                                                                                    className="w-full px-4 py-2.5 text-left flex items-center gap-2 hover:bg-gray-700/50 transition"
+                                                                                    className={`w-full px-2 py-1 text-left text-sm text-[#faf9f5] hover:bg-white/[0.05] rounded-md transition ${opName === op.operationName ? 'bg-white/[0.05]' : ''}`}
                                                                                 >
-                                                                                    <Plus className="w-4 h-4 text-[#d97757]" />
-                                                                                    <span className="text-[#d97757] text-sm">
-                                                                                        Create "{operationSearchQuery.trim().toUpperCase()}"
-                                                                                    </span>
+                                                                                    {opName}
                                                                                 </button>
-                                                                            </div>
-                                                                        )}
+                                                                            ))}
+                                                                        </div>
                                                                     </div>
                                                                 </>
                                                             )}
@@ -3920,20 +3926,36 @@ export default function ItemDetailPage() {
 
                                                     {/* Type */}
                                                     <td className="p-1 border-r border-border/50">
-                                                        <Select
-                                                            value={op.operationType || 'Process'}
-                                                            onValueChange={(val) => handleUpdateItemOperation(op.id, 'operationType', val)}
-                                                        >
-                                                            <SelectTrigger className="h-7 text-xs bg-secondary/50 border-border/50 focus:ring-0 shadow-none">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent className="bg-background border-border">
-                                                                <SelectItem value="Process">Process</SelectItem>
-                                                                <SelectItem value="Setup">Setup</SelectItem>
-                                                                <SelectItem value="Per unit">Per unit</SelectItem>
-                                                                <SelectItem value="Fixed cost">Fixed cost</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <div className="relative">
+                                                            <button
+                                                                onClick={() => setActiveTypePicker(activeTypePicker === op.id ? null : op.id)}
+                                                                className="w-full h-7 text-xs px-3 bg-transparent border border-border/50 rounded-md focus:ring-0 shadow-none flex items-center justify-start text-left"
+                                                            >
+                                                                <span className="truncate">{op.operationType || 'Process'}</span>
+                                                            </button>
+                                                            {activeTypePicker === op.id && (
+                                                                <>
+                                                                    <div className="fixed inset-0 z-[9998]" onClick={() => setActiveTypePicker(null)} />
+                                                                    <div className="absolute left-0 top-full mt-1 bg-[#1f1f1d] border border-[#3a3a38] rounded-md shadow-lg z-[9999] w-[180px] max-h-[350px] flex flex-col py-1 px-1">
+                                                                        <div className="flex-1 overflow-y-auto scrollbar-hide">
+                                                                            {['Process', 'Setup', 'Per unit', 'Fixed cost'].map(type => (
+                                                                                <button
+                                                                                    key={type}
+                                                                                    type="button"
+                                                                                    className={`w-full px-2 py-1 text-left text-sm text-[#faf9f5] hover:bg-white/[0.05] rounded-md transition ${type === op.operationType ? 'bg-white/[0.05]' : ''}`}
+                                                                                    onClick={() => {
+                                                                                        handleUpdateItemOperation(op.id, 'operationType', type);
+                                                                                        setActiveTypePicker(null);
+                                                                                    }}
+                                                                                >
+                                                                                    {type}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </td>
 
                                                     {/* Resource - Searchable dropdown */}
@@ -3948,72 +3970,22 @@ export default function ItemDetailPage() {
                                                             {activeResourcePicker === op.id && (
                                                                 <>
                                                                     <div className="fixed inset-0 z-[9998]" onClick={() => setActiveResourcePicker(null)} />
-                                                                    <div className="absolute left-0 top-full mt-1 bg-[#1f1f1d] border border-gray-600 rounded-lg shadow-2xl z-[9999] w-[280px] max-h-[350px] flex flex-col">
-                                                                        {/* Header */}
-                                                                        <div className="px-3 py-2 text-xs text-gray-400 border-b border-gray-700">
-                                                                            Select resource
-                                                                        </div>
-                                                                        {/* Search Input */}
-                                                                        <div className="p-3 border-b border-gray-700">
-                                                                            <div className="flex items-center gap-2 px-3 py-2 bg-[#2a2a28] rounded border border-gray-600 focus-within:border-gray-500">
-                                                                                <Search className="w-4 h-4 text-gray-500" />
-                                                                                <input
-                                                                                    type="text"
-                                                                                    value={resourceSearchQuery}
-                                                                                    onChange={(e) => setResourceSearchQuery(e.target.value)}
-                                                                                    placeholder="Resource name"
-                                                                                    className="bg-transparent text-white text-sm outline-none flex-1 placeholder-gray-500"
-                                                                                    autoFocus
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                        {/* Options List */}
-                                                                        <div className="flex-1 overflow-y-auto py-1">
-                                                                            {resourceOptions
-                                                                                .filter(resName => resName.toLowerCase().includes(resourceSearchQuery.toLowerCase()))
-                                                                                .map(resName => (
-                                                                                    <button
-                                                                                        key={resName}
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            handleUpdateItemOperation(op.id, 'resourceName', resName);
-                                                                                            setActiveResourcePicker(null);
-                                                                                            setResourceSearchQuery('');
-                                                                                        }}
-                                                                                        className={`w-full px-4 py-1.5 text-left flex items-center gap-2 hover:bg-gray-700/50 transition ${resName === op.resourceName ? 'bg-gray-700/30' : ''}`}
-                                                                                    >
-                                                                                        <span className="text-white text-sm">{resName}</span>
-                                                                                    </button>
-                                                                                ))
-                                                                            }
-                                                                            {resourceOptions.filter(resName => resName.toLowerCase().includes(resourceSearchQuery.toLowerCase())).length === 0 && !resourceSearchQuery.trim() && (
-                                                                                <div className="px-4 py-3 text-gray-500 text-sm">
-                                                                                    No resources found
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                        {/* Create new resource option */}
-                                                                        {resourceSearchQuery.trim() && resourceOptions.filter(resName => resName.toLowerCase().includes(resourceSearchQuery.toLowerCase())).length === 0 && (
-                                                                            <div className="border-t border-gray-700">
+                                                                    <div className="absolute left-0 top-full mt-1 bg-[#1f1f1d] border border-[#3a3a38] rounded-md shadow-lg z-[9999] w-[300px] max-h-[350px] flex flex-col py-1 px-1">
+                                                                        <div className="flex-1 overflow-y-auto scrollbar-hide">
+                                                                            {resourceOptions.map(resName => (
                                                                                 <button
+                                                                                    key={resName}
                                                                                     type="button"
+                                                                                    className={`w-full px-2 py-1 text-left text-sm text-[#faf9f5] hover:bg-white/[0.05] rounded-md transition-colors ${resName === op.resourceName ? 'bg-white/[0.05]' : ''}`}
                                                                                     onClick={() => {
-                                                                                        const newResName = resourceSearchQuery.trim().toUpperCase();
-                                                                                        // Add to dropdown options
-                                                                                        setResourceOptions(prev => [...prev, newResName]);
-                                                                                        handleUpdateItemOperation(op.id, 'resourceName', newResName);
+                                                                                        handleUpdateItemOperation(op.id, 'resourceName', resName);
                                                                                         setActiveResourcePicker(null);
-                                                                                        setResourceSearchQuery('');
                                                                                     }}
-                                                                                    className="w-full px-4 py-2.5 text-left flex items-center gap-2 hover:bg-gray-700/50 transition"
                                                                                 >
-                                                                                    <Plus className="w-4 h-4 text-[#d97757]" />
-                                                                                    <span className="text-[#d97757] text-sm">
-                                                                                        Create "{resourceSearchQuery.trim().toUpperCase()}"
-                                                                                    </span>
+                                                                                    {resName}
                                                                                 </button>
-                                                                            </div>
-                                                                        )}
+                                                                            ))}
+                                                                        </div>
                                                                     </div>
                                                                 </>
                                                             )}
@@ -4144,12 +4116,12 @@ export default function ItemDetailPage() {
                                                             {activeVariantPicker === op.id && (
                                                                 <>
                                                                     <div className="fixed inset-0 z-[9998]" onClick={() => setActiveVariantPicker(null)} />
-                                                                    <div className="absolute left-0 top-full mt-1 bg-[#1f1f1d] border border-gray-600 rounded-lg shadow-2xl z-[9999] w-[320px] max-h-[350px] flex flex-col">
+                                                                    <div className="absolute left-0 top-full mt-1 bg-[#1f1f1d] border border-[#3a3a38] rounded-md shadow-lg z-[9999] w-[320px] max-h-[350px] flex flex-col py-1 px-1">
                                                                         {/* Options List */}
-                                                                        <div className="flex-1 overflow-y-auto py-1">
+                                                                        <div className="flex-1 overflow-y-auto scrollbar-hide">
                                                                             {/* "- All -" option */}
                                                                             <label
-                                                                                className={`w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-700/50 transition cursor-pointer ${(!operationVariantSelections[op.id] || operationVariantSelections[op.id]?.allSelected) ? 'bg-gray-700/30' : ''
+                                                                                className={`w-full px-2 py-1 text-left flex items-center gap-2 hover:bg-white/[0.05] rounded-md transition cursor-pointer ${(!operationVariantSelections[op.id] || operationVariantSelections[op.id]?.allSelected) ? 'bg-white/[0.05]' : ''
                                                                                     }`}
                                                                             >
                                                                                 <Checkbox
@@ -4177,7 +4149,7 @@ export default function ItemDetailPage() {
                                                                                     }}
                                                                                     className="data-[state=checked]:bg-[#3b82f6] data-[state=checked]:border-[#3b82f6] border-0"
                                                                                 />
-                                                                                <span className="text-white text-sm">- All -</span>
+                                                                                <span className="text-[#faf9f5] text-sm">- All -</span>
                                                                             </label>
 
                                                                             {/* Individual variant options */}
@@ -4189,7 +4161,7 @@ export default function ItemDetailPage() {
                                                                                 return (
                                                                                     <label
                                                                                         key={variant.id}
-                                                                                        className={`w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-700/50 transition cursor-pointer ${isSelected ? 'bg-gray-700/30' : ''}`}
+                                                                                        className={`w-full px-2 py-1 text-left flex items-center gap-2 hover:bg-white/[0.05] rounded-md transition cursor-pointer ${isSelected ? 'bg-white/[0.05]' : ''}`}
                                                                                     >
                                                                                         <Checkbox
                                                                                             checked={isSelected}
@@ -4220,7 +4192,7 @@ export default function ItemDetailPage() {
                                                                                             }}
                                                                                             className="data-[state=checked]:bg-[#3b82f6] data-[state=checked]:border-[#3b82f6] border-0"
                                                                                         />
-                                                                                        <span className="text-white text-sm">{variantName}</span>
+                                                                                        <span className="text-[#faf9f5] text-sm">{variantName}</span>
                                                                                     </label>
                                                                                 );
                                                                             })}
@@ -4232,15 +4204,16 @@ export default function ItemDetailPage() {
                                                     </td>
 
                                                     {/* Calculated Cost */}
-                                                    <td className="p-3 text-right text-muted-foreground border-r border-border/50">
+                                                    <td className="px-2 py-0 text-right text-muted-foreground border-r border-border/50">
                                                         {calculateOperationCost(op.costPerHour, op.timeSeconds)} <span className="text-[10px]">CAD</span>
                                                     </td>
 
                                                     {/* Delete Button */}
-                                                    <td className="p-3 text-center">
+                                                    <td className="px-2 py-0 text-center">
                                                         <button
                                                             onClick={() => handleDeleteItemOperation(op.id)}
-                                                            className="text-[#ff7b6f] opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            className="text-[#ff7b6f] opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-[#ff7b6f]/10 rounded"
+                                                            title="Delete"
                                                         >
                                                             <Trash2 size={14} />
                                                         </button>
@@ -4322,45 +4295,54 @@ export default function ItemDetailPage() {
                     )}
 
                     {activeTab === 'Used in BOMs' && (
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <h3 className="text-lg font-medium text-foreground">{usedInBOMs.length} BOMs using this item</h3>
                             </div>
 
-                            <div className="bg-background rounded-lg border border-border overflow-hidden">
+                            <div className="bg-background rounded-lg border border-[#3a3a38] overflow-hidden">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="border-b border-border bg-secondary/10 text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
-                                            <th className="p-3 min-w-[250px]">Product</th>
-                                            <th className="p-3 w-40">SKU</th>
-                                            <th className="p-3 text-right w-32">Quantity</th>
-                                            <th className="p-3 w-20">UOM</th>
+                                        <tr className="h-8 bg-[#222220] border-b border-[#3a3a38]/50">
+                                            <th className="px-3 py-0 min-w-[250px] border-r border-[#3a3a38]/50">
+                                                <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">Product</span>
+                                            </th>
+                                            <th className="px-3 py-0 w-40 border-r border-[#3a3a38]/50">
+                                                <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">SKU</span>
+                                            </th>
+                                            <th className="px-3 py-0 text-right w-32 border-r border-[#3a3a38]/50">
+                                                <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">Quantity</span>
+                                            </th>
+                                            <th className="px-3 py-0 w-20">
+                                                <span className="font-medium text-[#7a7974] uppercase tracking-wider text-[11px]">UOM</span>
+                                            </th>
                                         </tr>
-                                        <tr className="border-b border-border bg-secondary/5">
-                                            <th className="p-1">
+                                        <tr className="border-b border-[#3a3a38]">
+                                            <th className="p-1" colSpan={4}>
                                                 <input
-                                                    className="w-full px-2 py-1 border border-border rounded-sm text-xs font-normal bg-background focus:outline-none focus:border-primary/50"
+                                                    className="w-full px-2 py-1 border-0 bg-transparent text-xs font-normal text-foreground placeholder:text-[#7a7974] focus:outline-none"
                                                     placeholder="Filter by product..."
                                                     value={filterBomProduct}
                                                     onChange={(e) => setFilterBomProduct(e.target.value)}
                                                 />
                                             </th>
-                                            <th colSpan={3}></th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-border text-sm">
+                                    <tbody className="divide-y divide-[#3a3a38] text-[13px]">
                                         {filteredUsedInBOMs.length > 0 ? filteredUsedInBOMs.map((bom, idx) => (
-                                            <tr key={idx} className="hover:bg-secondary/20 transition-colors group">
-                                                <td className="p-3 text-[#6A9BCC] hover:underline cursor-pointer font-medium">
-                                                    {bom.productName || bom.variantName || 'Unknown'}
+                                            <tr key={idx} className="h-8 hover:bg-secondary/20 transition-colors group">
+                                                <td className="px-2 py-0 border-r border-[#3a3a38]/50">
+                                                    <span className="text-[#faf9f5] font-medium cursor-pointer hover:text-[#d97757]">
+                                                        {bom.productName || bom.variantName || 'Unknown'}
+                                                    </span>
                                                 </td>
-                                                <td className="p-3 text-muted-foreground">{bom.productSku}</td>
-                                                <td className="p-3 text-right text-foreground">{bom.quantity}</td>
-                                                <td className="p-3 text-muted-foreground">{bom.uom || item.uom}</td>
+                                                <td className="px-2 py-0 text-[#bebcb3] border-r border-[#3a3a38]/50">{bom.productSku}</td>
+                                                <td className="px-2 py-0 text-right text-foreground border-r border-[#3a3a38]/50">{bom.quantity}</td>
+                                                <td className="px-2 py-0 text-[#bebcb3]">{bom.uom || item.uom}</td>
                                             </tr>
                                         )) : (
                                             <tr>
-                                                <td colSpan={4} className="p-8 text-center text-muted-foreground text-sm">
+                                                <td colSpan={4} className="p-8 text-center text-[#7a7974] text-sm">
                                                     This item is not used in any product BOMs.
                                                 </td>
                                             </tr>
